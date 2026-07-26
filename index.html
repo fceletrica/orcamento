@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Orçamento - FC Elétrica</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --primary-light: #334155;
+            --accent: #eab308;
+            --accent-hover: #ca8a04;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 900px) {
+            .container {
+                grid-template-columns: 1.2fr 0.8fr;
+            }
+            .panel-preview {
+                position: sticky;
+                top: 20px;
+                height: calc(100vh - 40px);
+                overflow-y: auto;
+            }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 1.25rem;
+            color: var(--primary);
+            margin-bottom: 16px;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group.full {
+            grid-column: span 2;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--primary-light);
+            margin-bottom: 4px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            font-size: 0.95rem;
+            transition: border 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 16px;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.95rem;
+        }
+
+        .radio-option input {
+            width: auto;
+            cursor: pointer;
+        }
+
+        .autocomplete-container {
+            position: relative;
+        }
+
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid var(--border);
+            border-bottom: none;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgb(0 0 0 / 0.1);
+            border-radius: 0 0 4px 4px;
+        }
+
+        .autocomplete-items div {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .autocomplete-items div:hover {
+            background-color: #f1f5f9;
+        }
+
+        .selected-items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.9rem;
+        }
+
+        .selected-items-table th, .selected-items-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .selected-items-table th {
+            background: #f1f5f9;
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        /* Preview Document Styles */
+        .preview-doc {
+            background: white;
+            border: 1px solid #d1d5db;
+            padding: 30px;
+            min-height: 700px;
+            font-size: 0.85rem;
+            color: #334155;
+            position: relative;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+
+        .preview-logo-placeholder {
+            width: 120px;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-logo-placeholder img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+        }
+
+        .preview-title-block {
+            text-align: right;
+        }
+
+        .preview-title-block h1 {
+            font-size: 1.4rem;
+            color: #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .preview-section {
+            margin-bottom: 15px;
+        }
+
+        .preview-section h3 {
+            background: #f1f5f9;
+            padding: 4px 8px;
+            font-size: 0.9rem;
+            color: #1e293b;
+            margin-bottom: 8px;
+            border-left: 4px solid var(--accent);
+        }
+
+        .preview-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .preview-totals {
+            margin-top: 20px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 10px;
+            text-align: right;
+        }
+
+        .preview-total-row {
+            display: flex;
+            justify-content: flex-end;
+            gap: 20px;
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        .preview-total-row.grand-total {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-top: 8px;
+        }
+
+        .preview-footer-notes {
+            margin-top: 25px;
+            font-size: 0.75rem;
+            color: #64748b;
+            border-top: 1px dashed #cbd5e1;
+            padding-top: 10px;
+        }
+
+        .preview-signatures {
+            margin-top: 45px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .sig-line {
+            width: 45%;
+            text-align: center;
+            border-top: 1px solid #94a3b8;
+            padding-top: 5px;
+            font-size: 0.8rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: white;
+            transition: background 0.2s;
+        }
+
+        .btn-whatsapp { background-color: #25d366; }
+        .btn-whatsapp:hover { background-color: #128c7e; }
+        .btn-email { background-color: #3b82f6; }
+        .btn-email:hover { background-color: #1d4ed8; }
+
+        .hidden { display: none !important; }
+        
+        .file-upload-wrapper {
+            background: #f8fafc;
+            border: 2px dashed var(--border);
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="panel-forms">
+        <div class="card">
+            <h2>Dados do Prestador (Sua Empresa)</h2>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Logo da Empresa</label>
+                    <div class="file-upload-wrapper">
+                        <input type="file" id="upload_logo" accept="image/*" onchange="carregarLogoLocal(this)" style="display:none;">
+                        <span id="upload_label" style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Alterar Logo (Clique aqui)</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="empresa_nome">Nome da Empresa</label>
+                    <input type="text" id="empresa_nome" value="FC Elétrica" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="empresa_tel">Telefone Comercial</label>
+                    <input type="text" id="empresa_tel" value="(27) 99999-8888" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="empresa_email">E-mail Comercial</label>
+                    <input type="email" id="empresa_email" value="contato@fceletrica.com.br" oninput="updatePreview()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Dados do Cliente & Controle</h2>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label for="doc_numero">Nº do Documento</label>
+                    <input type="text" id="doc_numero" value="ORC-2026-001" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="doc_data">Data de Criação</label>
+                    <input type="date" id="doc_data" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="doc_validade">Validade do Orçamento</label>
+                    <input type="text" id="doc_validade" value="15 dias" oninput="updatePreview()">
+                </div>
+            </div>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="cliente_nome">Nome do Cliente</label>
+                    <input type="text" id="cliente_nome" placeholder="Nome Completo / Razão Social" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label for="cliente_tel">Telefone do Cliente</label>
+                    <input type="text" id="cliente_tel" placeholder="(XX) XXXXX-XXXX" oninput="updatePreview()">
+                </div>
+                <div class="form-group full">
+                    <label for="cliente_end">Endereço Completo</label>
+                    <input type="text" id="cliente_end" placeholder="Rua, Número, Bairro, Cidade" oninput="updatePreview()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Configuração da Mão de Obra</h2>
+            <label>Modelo de Cobrança</label>
+            <div class="radio-group">
+                <label class="radio-option">
+                    <input type="radio" name="tipo_cobranca" value="servico" checked onclick="toggleCobrancaModo()">
+                    Por Tipo de Serviço (Lista)
+                </label>
+                <label class="radio-option">
+                    <input type="radio" name="tipo_cobranca" value="diaria" onclick="toggleCobrancaModo()">
+                    Por Diária
+                </label>
+            </div>
+
+            <div id="modo_diaria_campos" class="hidden">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="valor_diaria_eletricista">Diária Eletricista (R$)</label>
+                        <input type="number" id="valor_diaria_eletricista" value="250" oninput="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="valor_diaria_ajudante">Diária Ajudante (R$ - opcional)</label>
+                        <input type="number" id="valor_diaria_ajudante" value="0" oninput="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="prazo_estimado">Prazo Estimado (Dias)</label>
+                        <input type="number" id="prazo_estimado" value="1" oninput="calculateTotals()">
+                    </div>
+                    <div class="form-group">
+                        <label for="custo_deslocamento">Custo Deslocamento (R$)</label>
+                        <input type="number" id="custo_deslocamento" value="0" oninput="calculateTotals()">
+                    </div>
+                    <div class="form-group full">
+                        <label for="custo_almoco">Custo Almoço Total (R$)</label>
+                        <input type="number" id="custo_almoco" value="0" oninput="calculateTotals()">
+                    </div>
+                </div>
+            </div>
+
+            <div id="modo_servico_campos">
+                <div class="form-group autocomplete-container">
+                    <label for="busca_servico">Pesquisar Serviço da Lista</label>
+                    <input type="text" id="busca_servico" placeholder="Digite ex: Quadro, Disjuntor..." autocomplete="off">
+                    <div id="autocomplete_list" class="autocomplete-items"></div>
+                </div>
+                <table class="selected-items-table">
+                    <thead>
+                        <tr>
+                            <th>Serviço Selecionado</th>
+                            <th style="width: 100px;">Valor</th>
+                            <th style="width: 60px;">Ação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="servicos_selecionados_corpo"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Custos Adicionais / Materiais</h2>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="material_total">Valor Total dos Materiais (R$)</label>
+                    <input type="number" id="material_total" value="0" placeholder="0,00" oninput="calculateTotals()">
+                </div>
+                <div class="form-group">
+                    <label for="outros_custos">Outros Custos (R$)</label>
+                    <input type="number" id="outros_custos" value="0" placeholder="0,00" oninput="calculateTotals()">
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Descrição Detalhada do Serviço</h2>
+            <div class="form-group">
+                <textarea id="servico_descricao" rows="4" placeholder="Detalhes das atividades..." oninput="updatePreview()"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel-preview">
+        <div class="preview-doc" id="printable_area">
+            <div class="preview-header">
+                <div id="preview_logo_zone" class="preview-logo-placeholder"></div>
+                <div class="preview-title-block">
+                    <h1>Orçamento</h1>
+                    <p><strong>Nº Doc:</strong> <span id="p_doc_num">ORC-2026-001</span></p>
+                    <p><strong>Data:</strong> <span id="p_doc_data">--/--/----</span></p>
+                </div>
+            </div>
+
+            <div class="preview-grid-2 preview-section">
+                <div>
+                    <strong>PRESTADOR:</strong><br>
+                    <span id="p_empresa_nome" style="font-weight: bold;">FC Elétrica</span><br>
+                    Tel: <span id="p_empresa_tel">(27) 99999-8888</span><br>
+                    E-mail: <span id="p_empresa_email">contato@fceletrica.com.br</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong>CLIENTE:</strong><br>
+                    <span id="p_cliente_nome" style="font-weight: bold;">---</span><br>
+                    Tel: <span id="p_cliente_tel">---</span><br>
+                    End: <span id="p_cliente_end">---</span>
+                </div>
+            </div>
+
+            <div class="preview-section">
+                <h3>Descrição do Serviço</h3>
+                <p id="p_servico_descricao" style="white-space: pre-wrap; color: #475569;">Nenhuma descrição informada.</p>
+            </div>
+
+            <div class="preview-section">
+                <h3>Detalhamento Financeiro</h3>
+                <table style="width: 100%; border-collapse: collapse;" id="preview_itens_tabela">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th style="padding: 4px 0;">Item/Descrição</th>
+                            <th style="text-align: right; padding: 4px 0;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_itens_corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="preview-totals">
+                <div class="preview-total-row">
+                    <span>Mão de Obra:</span>
+                    <strong id="p_subtotal_mo">R$ 0,00</strong>
+                </div>
+                <div class="preview-total-row">
+                    <span>Material / Custos:</span>
+                    <strong id="p_subtotal_mat">R$ 0,00</strong>
+                </div>
+                <div class="preview-total-row grand-total">
+                    <span>VALOR TOTAL:</span>
+                    <span id="p_valor_total">R$ 0,00</span>
+                </div>
+            </div>
+
+            <div class="preview-footer-notes">
+                <p><strong>Validade:</strong> <span id="p_validade">15 dias</span></p>
+                <p><strong>Garantia:</strong> 90 dias conforme legislação.</p>
+            </div>
+
+            <div class="preview-signatures">
+                <div class="sig-line">Assinatura do Prestador</div>
+                <div class="sig-line">Aceite do Cliente</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-action btn-whatsapp" onclick="enviarWhatsApp()">Enviar via WhatsApp</button>
+            <button class="btn-action btn-email" onclick="enviarEmail()">Enviar por E-mail</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentLogoSrc = localStorage.getItem('fc_logo_saved') || ""; 
+
+    const bancoServicos = [
+        { nome: "Quadro elétrico 16 Disjuntores - Instalação", preco: 825.00 },
+        { nome: "Quadro elétrico 24 Disjuntores - Instalação", preco: 1175.00 },
+        { nome: "Quadro elétrico 32 Disjuntores - Instalação", preco: 1550.00 },
+        { nome: "Quadro elétrico - Manutenção", preco: 350.00 },
+        { nome: "Instalação de Tomada Simples/Dupla", preco: 45.00 },
+        { nome: "Instalação de Luminária LED", preco: 65.00 }
+    ];
+
+    let servicosSelecionados = [];
+
+    document.querySelector('.file-upload-wrapper').addEventListener('click', function() {
+        document.getElementById('upload_logo').click();
+    });
+
+    function carregarLogoLocal(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                currentLogoSrc = e.target.result;
+                try {
+                    localStorage.setItem('fc_logo_saved', currentLogoSrc);
+                    document.getElementById('upload_label').innerText = "Logo salva com sucesso!";
+                } catch(err) {
+                    document.getElementById('upload_label').innerText = "Logo carregada (Memória cheia).";
+                }
+                updatePreview();
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    document.getElementById('doc_data').valueAsDate = new Date();
+
+    const buscaInput = document.getElementById('busca_servico');
+    const autocompleteList = document.getElementById('autocomplete_list');
+
+    buscaInput.addEventListener('input', function() {
+        const val = this.value;
+        autocompleteList.innerHTML = '';
+        if (!val) return false;
+
+        const filtrados = bancoServicos.filter(s => s.nome.toLowerCase().includes(val.toLowerCase()));
+        
+        filtrados.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${item.nome}</strong> - R$ ${item.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            div.addEventListener('click', function() {
+                servicosSelecionados.push(item);
+                renderServicosTabela();
+                calculateTotals();
+                buscaInput.value = '';
+                autocompleteList.innerHTML = '';
+            });
+            autocompleteList.appendChild(div);
+        });
+    });
+
+    function renderServicosTabela() {
+        const corpo = document.getElementById('servicos_selecionados_corpo');
+        corpo.innerHTML = '';
+        servicosSelecionados.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nome}</td>
+                <td>R$ ${item.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                <td><button class="btn-danger" onclick="servicosSelecionados.splice(${index}, 1); renderServicosTabela(); calculateTotals();">X</button></td>
+            `;
+            corpo.appendChild(tr);
+        });
+    }
+
+    function toggleCobrancaModo() {
+        const modo = document.querySelector('input[name="tipo_cobranca"]:checked').value;
+        document.getElementById('modo_diaria_campos').classList.toggle('hidden', modo !== 'diaria');
+        document.getElementById('modo_servico_campos').classList.toggle('hidden', modo === 'diaria');
+        calculateTotals();
+    }
+
+    function calculateTotals() {
+        const modo = document.querySelector('input[name="tipo_cobranca"]:checked').value;
+        let subtotalMO = 0;
+
+        if (modo === 'diaria') {
+            const eletricista = parseFloat(document.getElementById('valor_diaria_eletricista').value) || 0;
+            const ajudante = parseFloat(document.getElementById('valor_diaria_ajudante').value) || 0;
+            const prazo = parseFloat(document.getElementById('prazo_estimado').value) || 0;
+            const deslocamento = parseFloat(document.getElementById('custo_deslocamento').value) || 0;
+            const almoco = parseFloat(document.getElementById('custo_almoco').value) || 0;
+            subtotalMO = ((eletricista + ajudante) * prazo) + deslocamento + almoco;
+        } else {
+            subtotalMO = servicosSelecionados.reduce((acc, curr) => acc + curr.preco, 0);
+        }
+
+        const materialTotal = parseFloat(document.getElementById('material_total').value) || 0;
+        const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
+        const subtotalMaterialCustos = materialTotal + outrosCustos;
+        const valorTotalGeral = subtotalMO + subtotalMaterialCustos;
+
+        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMaterialCustos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+        document.getElementById('p_valor_total').innerText = `R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+
+        const previewCorpo = document.getElementById('preview_itens_corpo');
+        previewCorpo.innerHTML = '';
+
+        if (modo === 'diaria') {
+            const prazo = document.getElementById('prazo_estimado').value || 0;
+            previewCorpo.innerHTML += `<tr><td>Mão de obra por Diária (${prazo} dias)</td><td style="text-align: right;">R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+        } else {
+            servicosSelecionados.forEach(item => {
+                previewCorpo.innerHTML += `<tr><td>${item.nome}</td><td style="text-align: right;">R$ ${item.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+            });
+        }
+
+        if (materialTotal > 0) previewCorpo.innerHTML += `<tr><td>Materiais Elétricos</td><td style="text-align: right;">R$ ${materialTotal.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+        if (outrosCustos > 0) previewCorpo.innerHTML += `<tr><td>Outros custos</td><td style="text-align: right;">R$ ${outrosCustos.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td></tr>`;
+
+        updatePreview();
+    }
+
+    function updatePreview() {
+        document.getElementById('p_doc_num').innerText = document.getElementById('doc_numero').value || '---';
+        const dataInput = document.getElementById('doc_data').value;
+        if(dataInput) document.getElementById('p_doc_data').innerText = new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR');
+
+        document.getElementById('p_empresa_nome').innerText = document.getElementById('empresa_nome').value || 'FC Elétrica';
+        document.getElementById('p_empresa_tel').innerText = document.getElementById('empresa_tel').value || '---';
+        document.getElementById('p_empresa_email').innerText = document.getElementById('empresa_email').value || '---';
+        document.getElementById('p_cliente_nome').innerText = document.getElementById('cliente_nome').value || '---';
+        document.getElementById('p_cliente_tel').innerText = document.getElementById('cliente_tel').value || '---';
+        document.getElementById('p_cliente_end').innerText = document.getElementById('cliente_end').value || '---';
+        document.getElementById('p_servico_descricao').innerText = document.getElementById('servico_descricao').value || "Nenhuma descrição informada.";
+        document.getElementById('p_validade').innerText = document.getElementById('doc_validade').value || '15 dias';
+
+        const logoZone = document.getElementById('preview_logo_zone');
+        if (currentLogoSrc) {
+            logoZone.innerHTML = `<img src="${currentLogoSrc}" alt="Logo">`;
+            document.getElementById('upload_label').innerText = "Logo salva no sistema";
+        } else {
+            logoZone.innerHTML = '<span style="font-size:0.75rem; color:#94a3b8;">[Sem Logo]</span>';
+        }
+    }
+
+    function formatarTextoMensagem() {
+        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue resumo do seu orçamento (${document.getElementById('doc_numero').value}):\n\n*Total:* ${document.getElementById('p_valor_total').innerText}\n*Validade:* ${document.getElementById('p_validade').innerText}\n\nEnviado por FC Elétrica.`;
+    }
+
+    function enviarWhatsApp() {
+        window.open(`https://api.whatsapp.com/send?phone=${document.getElementById('cliente_tel').value.replace(/\D/g, '')}&text=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
+    }
+
+    function enviarEmail() {
+        window.open(`mailto:${document.getElementById('empresa_email').value}?subject=Orçamento&body=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
+    }
+
+    calculateTotals();
+</script>
+</body>
+</html>
