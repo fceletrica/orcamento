@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Orçamento - FC Elétrica</title>
+    <title>Sistema de Gestão - FC Elétrica</title>
     <style>
         :root {
             --primary: #1e293b;
@@ -105,6 +105,29 @@
             border: 1px solid var(--border);
             border-radius: 4px;
             font-size: 0.95rem;
+        }
+
+        .doc-type-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .doc-type-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: #f1f5f9;
+            cursor: pointer;
+            font-weight: bold;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .doc-type-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
         }
 
         .autocomplete-container {
@@ -288,6 +311,15 @@
 <div class="container">
     <div class="panel-forms">
         <div class="card">
+            <h2>Tipo de Documento</h2>
+            <div class="doc-type-selector">
+                <div class="doc-type-btn active" id="btn_orc" onclick="setDocType('Orçamento')">Orçamento</div>
+                <div class="doc-type-btn" id="btn_os" onclick="setDocType('Ordem de Serviço')">Ordem de Serviço</div>
+                <div class="doc-type-btn" id="btn_rec" onclick="setDocType('Recibo')">Recibo</div>
+            </div>
+        </div>
+
+        <div class="card">
             <h2>Dados da Empresa & Logo</h2>
             <div class="grid-2">
                 <div class="form-group">
@@ -340,7 +372,7 @@
                     <input type="date" id="doc_data" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
-                    <label>Validade</label>
+                    <label>Validade / Prazo</label>
                     <input type="text" id="doc_validade" value="15 dias" oninput="updatePreview()">
                 </div>
             </div>
@@ -417,11 +449,19 @@
         </div>
 
         <div class="card">
-            <h2>Outros Custos & Pagamento</h2>
+            <h2>Taxas Adicionais & Descontos</h2>
             <div class="grid-2">
                 <div class="form-group">
-                    <label>Outras Taxas / Custos (R$)</label>
+                    <label>Descrição da Taxa Adicional</label>
+                    <input type="text" id="outros_custos_desc" placeholder="Ex: Taxa de Deslocamento / Urgência" oninput="calculateTotals()">
+                </div>
+                <div class="form-group">
+                    <label>Valor da Taxa (R$)</label>
                     <input type="number" id="outros_custos" value="0" oninput="calculateTotals()">
+                </div>
+                <div class="form-group">
+                    <label>Desconto Especial (R$)</label>
+                    <input type="number" id="desconto_total" value="0" oninput="calculateTotals()">
                 </div>
                 <div class="form-group">
                     <label>Condições de Pagamento</label>
@@ -450,7 +490,7 @@
             <div class="preview-header">
                 <div id="preview_logo_zone" class="preview-logo-placeholder"></div>
                 <div class="preview-title-block">
-                    <h1>Orçamento</h1>
+                    <h1 id="p_titulo_doc">Orçamento</h1>
                     <p><strong>Nº Doc:</strong> <span id="p_doc_num">ORC-2026-001</span></p>
                     <p><strong>Data:</strong> <span id="p_doc_data">--/--/----</span></p>
                 </div>
@@ -509,7 +549,8 @@
             <div class="preview-totals">
                 <div class="preview-total-row"><span>Mão de Obra:</span><strong id="p_subtotal_mo">R$ 0,00</strong></div>
                 <div class="preview-total-row"><span>Materiais Aplicados:</span><strong id="p_subtotal_mat">R$ 0,00</strong></div>
-                <div class="preview-total-row" id="p_row_outros"><span>Outros Custos:</span><strong id="p_subtotal_outros">R$ 0,00</strong></div>
+                <div class="preview-total-row" id="p_row_outros"><span><span id="p_outros_label">Outros Custos</span>:</span><strong id="p_subtotal_outros">R$ 0,00</strong></div>
+                <div class="preview-total-row" id="p_row_desconto" style="color: #10b981;"><span>Desconto:</span><strong id="p_subtotal_desconto">-R$ 0,00</strong></div>
                 <div class="preview-total-row grand-total"><span>VALOR TOTAL:</span><span id="p_valor_total">R$ 0,00</span></div>
             </div>
 
@@ -517,18 +558,18 @@
                 <strong>Condições de Pagamento:</strong> <span id="p_condicoes">50% de entrada e 50% na entrega</span>
             </div>
 
-            <div class="preview-section" style="margin-top: 15px;">
+            <div class="preview-section" style="margin-top: 15px;" id="p_zona_obs">
                 <strong style="font-size: 0.8rem; display:block; margin-bottom:2px;">Observações Técnicas:</strong>
                 <p id="p_observacoes" style="white-space: pre-wrap; font-size: 0.75rem; color: #64748b;"></p>
             </div>
 
             <div style="margin-top: 15px; font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
-                <p><strong>Validade:</strong> <span id="p_validade">15 dias</span> | <strong>Garantia:</strong> 90 dias conforme legislação.</p>
+                <p><strong id="p_label_validade">Validade:</strong> <span id="p_validade">15 dias</span> | <strong>Garantia:</strong> 90 dias conforme legislação.</p>
             </div>
 
             <div class="preview-signatures">
                 <div class="sig-line">Assinatura do Prestador</div>
-                <div class="sig-line">Aceite do Cliente</div>
+                <div class="sig-line" id="p_sig_cliente">Aceite do Cliente</div>
             </div>
         </div>
 
@@ -542,6 +583,7 @@
 
 <script>
     let currentLogoSrc = localStorage.getItem('fc_logo_saved') || "";
+    let docType = "Orçamento";
     
     let bancoServicos = JSON.parse(localStorage.getItem('fc_banco_servicos')) || [
         { nome: "Quadro elétrico 24 Disjuntores - Instalação", preco: 1175.00 },
@@ -554,6 +596,27 @@
     let materiaisSelecionados = [];
 
     document.getElementById('doc_data').valueAsDate = new Date();
+
+    function setDocType(type) {
+        docType = type;
+        document.querySelectorAll('.doc-type-btn').forEach(btn => btn.classList.remove('active'));
+        if(type === 'Orçamento') document.getElementById('btn_orc').classList.add('active');
+        if(type === 'Ordem de Serviço') document.getElementById('btn_os').classList.add('active');
+        if(type === 'Recibo') document.getElementById('btn_rec').classList.add('active');
+        
+        // Customizações textuais automáticas baseadas no tipo de documento
+        if (type === 'Recibo') {
+            document.getElementById('p_sig_cliente').innerText = "Assinatura de Quem Recebeu";
+            document.getElementById('p_label_validade').innerText = "Referência:";
+            document.getElementById('p_zona_obs').style.display = 'none';
+        } else {
+            document.getElementById('p_sig_cliente').innerText = "Aceite do Cliente";
+            document.getElementById('p_label_validade').innerText = "Validade:";
+            document.getElementById('p_zona_obs').style.display = 'block';
+        }
+        
+        updatePreview();
+    }
 
     function carregarLogoLocal(input) {
         if (input.files && input.files[0]) {
@@ -683,17 +746,26 @@
     function calculateTotals() {
         let subtotalMO = servicosSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         let subtotalMAT = materiaisSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
-        const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
         
-        const valorTotalGeral = subtotalMO + subtotalMAT + outrosCustos;
+        const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
+        const outrosCustosDesc = document.getElementById('outros_custos_desc').value || 'Taxas Adicionais';
+        const descontoTotal = parseFloat(document.getElementById('desconto_total').value) || 0;
+        
+        const valorTotalGeral = (subtotalMO + subtotalMAT + outrosCustos) - descontoTotal;
 
         document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        
+        document.getElementById('p_outros_label').innerText = outrosCustosDesc;
         document.getElementById('p_subtotal_outros').innerText = `R$ ${outrosCustos.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_valor_total').innerText = `R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
 
         if (outrosCustos === 0) document.getElementById('p_row_outros').style.display = 'none';
         else document.getElementById('p_row_outros').style.display = 'flex';
+
+        if (descontoTotal === 0) document.getElementById('p_row_desconto').style.display = 'none';
+        else document.getElementById('p_row_desconto').style.display = 'flex';
 
         // Preenche Serviços no Preview
         const previewServicos = document.getElementById('preview_servicos_corpo');
@@ -728,6 +800,7 @@
     }
 
     function updatePreview() {
+        document.getElementById('p_titulo_doc').innerText = docType;
         document.getElementById('p_doc_num').innerText = document.getElementById('doc_numero').value || '---';
         const dataInput = document.getElementById('doc_data').value;
         if(dataInput) document.getElementById('p_doc_data').innerText = new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR');
@@ -752,7 +825,7 @@
     }
 
     function formatarTextoMensagem() {
-        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue o resumo do seu orçamento da *FC Elétrica* (${document.getElementById('doc_numero').value}):\n\n*Total:* ${document.getElementById('p_valor_total').innerText}\n*Pagamento:* ${document.getElementById('condicoes_pagamento').value}\n\nEstou te enviando o arquivo em PDF com a descrição técnica detalhada logo em seguida!`;
+        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue o resumo do seu documento da *FC Elétrica*:\n\n*Tipo:* ${docType}\n*Nº Doc:* ${document.getElementById('doc_numero').value}\n*Total Geral:* ${document.getElementById('p_valor_total').innerText}\n*Pagamento:* ${document.getElementById('condicoes_pagamento').value}\n\nEstou te enviando o documento detalhado em PDF logo em seguida!`;
     }
 
     function enviarWhatsApp() {
@@ -762,7 +835,7 @@
     }
 
     function enviarEmail() {
-        window.open(`mailto:${document.getElementById('empresa_email').value}?subject=Orçamento ${document.getElementById('doc_numero').value}&body=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
+        window.open(`mailto:${document.getElementById('empresa_email').value}?subject=${docType} ${document.getElementById('doc_numero').value}&body=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
     }
 
     atualizarPainelBanco();
