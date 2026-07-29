@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão - FC Elétrica</title>
     
-<link rel="icon" type="image/png" href="logo.png">
-<link rel="apple-touch-icon" href="logo.png">
-
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
     <style>
         :root {
             --primary: #1e293b;
@@ -272,6 +272,12 @@
             border-top: 1px solid #94a3b8;
             padding-top: 5px;
         }
+        
+        .sig-line.center-sig {
+            width: 60%;
+            margin: 0 auto;
+            float: none;
+        }
 
         .action-buttons {
             display: grid;
@@ -318,7 +324,6 @@
             <h2>Tipo de Documento</h2>
             <div class="doc-type-selector">
                 <div class="doc-type-btn active" id="btn_orc" onclick="setDocType('Orçamento')">Orçamento</div>
-                <div class="doc-type-btn" id="btn_os" onclick="setDocType('Ordem de Serviço')">Ordem de Serviço</div>
                 <div class="doc-type-btn" id="btn_rec" onclick="setDocType('Recibo')">Recibo</div>
             </div>
         </div>
@@ -366,7 +371,7 @@
 
         <div class="card">
             <h2>Dados do Cliente</h2>
-            <div class="grid-3">
+            <div class="grid-3" id="campos_prazos_bloco">
                 <div class="form-group">
                     <label>Nº Doc</label>
                     <input type="text" id="doc_numero" value="ORC-2026-001" oninput="updatePreview()">
@@ -375,7 +380,7 @@
                     <label>Data</label>
                     <input type="date" id="doc_data" oninput="updatePreview()">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="campo_validade_wrapper">
                     <label>Validade / Prazo</label>
                     <input type="text" id="doc_validade" value="15 dias" oninput="updatePreview()">
                 </div>
@@ -467,7 +472,7 @@
                     <label>Desconto Especial (R$)</label>
                     <input type="number" id="desconto_total" value="0" oninput="calculateTotals()">
                 </div>
-                <div class="form-group">
+                <div class="form-group" id="campo_pagamento_wrapper">
                     <label>Condições de Pagamento</label>
                     <input type="text" id="condicoes_pagamento" value="50% de entrada e 50% na entrega" oninput="updatePreview()">
                 </div>
@@ -475,13 +480,13 @@
         </div>
 
         <div class="card">
-            <h2>Descrição Adicional & Termos Técnicos</h2>
+            <h2>Descrição Adicional & Textos</h2>
             <div class="form-group">
-                <label>Escopo do Serviço</label>
+                <label>Descrição / Detalhes dos Serviços Prestados</label>
                 <textarea id="servico_descricao" rows="2" placeholder="Detalhes específicos deste atendimento..." oninput="updatePreview()"></textarea>
             </div>
-            <div class="form-group">
-                <label>Observações Técnicas Padrão</label>
+            <div class="form-group" id="zona_obs_input">
+                <label>Observações Técnicas Padrão (Apenas Orçamento)</label>
                 <textarea id="observacoes_padrao" rows="4" oninput="updatePreview()">- Não nos responsabilizamos pelo fechamento de rasgos em alvenaria, gesso ou pintura posterior.
 - A infraestrutura de passagem (eletrodutos desobstruídos) é de responsabilidade do cliente.
 - Caso os materiais não sejam fornecidos na data combinada, o cronograma poderá sofrer alterações.</textarea>
@@ -515,6 +520,14 @@
                 </div>
             </div>
 
+            <!-- BLOCO DE DECLARAÇÃO EXCLUSIVO DO RECIBO -->
+            <div class="preview-section" id="p_bloco_declaracao" style="display: none; border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 20px; background: #f8fafc; border-radius: 4px;">
+                <h3 style="background:none; border-left:none; padding:0; font-weight:bold; margin-bottom: 5px;">Declaração</h3>
+                <p style="font-size: 1rem; line-height: 1.5; color:#0f172a;">
+                    Declaro por meio deste documento, ter recebido a quantia de <strong id="p_declara_valor">R$ 0,00</strong> referente aos serviços e/ou materiais descritos abaixo neste documento.
+                </p>
+            </div>
+
             <div class="preview-section">
                 <h3>Descrição do Serviço</h3>
                 <p id="p_servico_descricao" style="white-space: pre-wrap;">Nenhuma descrição informada.</p>
@@ -526,6 +539,21 @@
                     <thead>
                         <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
                             <th>Descrição</th>
+                            <th style="text-align: center; width: 50px;">Qtd</th>
+                            <th style="text-align: center; width: 50px;">Un</th>
+                            <th style="text-align: right; width: 90px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_servicos_corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="preview-section" id="preview_secao_materiais">
+                <h3>Detalhamento de Materiais</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th>Material</th>
                             <th style="text-align: center; width: 50px;">Qtd</th>
                             <th style="text-align: center; width: 50px;">Un</th>
                             <th style="text-align: right; width: 90px;">Total</th>
@@ -558,7 +586,7 @@
                 <div class="preview-total-row grand-total"><span>VALOR TOTAL:</span><span id="p_valor_total">R$ 0,00</span></div>
             </div>
 
-            <div style="margin-top: 15px; font-size: 0.8rem; background: #f8fafc; padding: 8px;">
+            <div id="p_zona_pagamento" style="margin-top: 15px; font-size: 0.8rem; background: #f8fafc; padding: 8px;">
                 <strong>Condições de Pagamento:</strong> <span id="p_condicoes">50% de entrada e 50% na entrega</span>
             </div>
 
@@ -567,12 +595,12 @@
                 <p id="p_observacoes" style="white-space: pre-wrap; font-size: 0.75rem; color: #64748b;"></p>
             </div>
 
-            <div style="margin-top: 15px; font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
-                <p><strong id="p_label_validade">Validade:</strong> <span id="p_validade">15 dias</span> | <strong>Garantia:</strong> 90 dias conforme legislação.</p>
+            <div id="p_zona_validade" style="margin-top: 15px; font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
+                <p><strong>Validade:</strong> <span id="p_validade">15 dias</span> | <strong>Garantia:</strong> 90 dias conforme legislação.</p>
             </div>
 
-            <div class="preview-signatures">
-                <div class="sig-line">Assinatura do Prestador</div>
+            <div class="preview-signatures" id="p_zona_assinaturas">
+                <div class="sig-line" id="p_sig_prestador">Assinatura do Prestador</div>
                 <div class="sig-line" id="p_sig_cliente">Aceite do Cliente</div>
             </div>
         </div>
@@ -605,18 +633,45 @@
         docType = type;
         document.querySelectorAll('.doc-type-btn').forEach(btn => btn.classList.remove('active'));
         if(type === 'Orçamento') document.getElementById('btn_orc').classList.add('active');
-        if(type === 'Ordem de Serviço') document.getElementById('btn_os').classList.add('active');
         if(type === 'Recibo') document.getElementById('btn_rec').classList.add('active');
         
-        // Customizações textuais automáticas baseadas no tipo de documento
+        const blocoCamposPrazos = document.getElementById('campos_prazos_bloco');
+        const campoValidadeInputWrapper = document.getElementById('campo_validade_wrapper');
+        const campoPagamentoInputWrapper = document.getElementById('campo_pagamento_wrapper');
+        const zonaObsInput = document.getElementById('zona_obs_input');
+
         if (type === 'Recibo') {
-            document.getElementById('p_sig_cliente').innerText = "Assinatura de Quem Recebeu";
-            document.getElementById('p_label_validade').innerText = "Referência:";
+            // Ajustes visuais nos inputs
+            campoValidadeInputWrapper.style.display = 'none';
+            campoPagamentoInputWrapper.style.display = 'none';
+            blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr';
+            zonaObsInput.style.display = 'none';
+
+            // Ajustes visuais no documento impresso/preview
+            document.getElementById('p_bloco_declaracao').style.display = 'block';
+            document.getElementById('p_zona_pagamento').style.display = 'none';
             document.getElementById('p_zona_obs').style.display = 'none';
+            document.getElementById('p_zona_validade').style.display = 'none';
+            
+            // Ajuste nas assinaturas (apenas prestador centralizado)
+            document.getElementById('p_sig_cliente').style.display = 'none';
+            document.getElementById('p_sig_prestador').className = "sig-line center-sig";
+            document.getElementById('p_sig_prestador').innerText = "Assinatura do Emitente (FC Elétrica)";
         } else {
-            document.getElementById('p_sig_cliente').innerText = "Aceite do Cliente";
-            document.getElementById('p_label_validade').innerText = "Validade:";
+            // Restaura os campos para Orçamento
+            campoValidadeInputWrapper.style.display = 'block';
+            campoPagamentoInputWrapper.style.display = 'block';
+            blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr 1fr';
+            zonaObsInput.style.display = 'block';
+
+            document.getElementById('p_bloco_declaracao').style.display = 'none';
+            document.getElementById('p_zona_pagamento').style.display = 'block';
             document.getElementById('p_zona_obs').style.display = 'block';
+            document.getElementById('p_zona_validade').style.display = 'block';
+            
+            document.getElementById('p_sig_cliente').style.display = 'block';
+            document.getElementById('p_sig_prestador').className = "sig-line";
+            document.getElementById('p_sig_prestador').innerText = "Assinatura do Prestador";
         }
         
         updatePreview();
@@ -757,13 +812,18 @@
         
         const valorTotalGeral = (subtotalMO + subtotalMAT + outrosCustos) - descontoTotal;
 
+        const valorFormatado = valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
+
         document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         
         document.getElementById('p_outros_label').innerText = outrosCustosDesc;
         document.getElementById('p_subtotal_outros').innerText = `R$ ${outrosCustos.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-        document.getElementById('p_valor_total').innerText = `R$ ${valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_valor_total').innerText = `R$ ${valorFormatado}`;
+        
+        // Atualiza a declaração do Recibo com o valor total calculado dinamicamente
+        document.getElementById('p_declara_valor').innerText = `R$ ${valorFormatado}`;
 
         if (outrosCustos === 0) document.getElementById('p_row_outros').style.display = 'none';
         else document.getElementById('p_row_outros').style.display = 'flex';
@@ -829,7 +889,7 @@
     }
 
     function formatarTextoMensagem() {
-        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue o resumo do seu documento da *FC Elétrica*:\n\n*Tipo:* ${docType}\n*Nº Doc:* ${document.getElementById('doc_numero').value}\n*Total Geral:* ${document.getElementById('p_valor_total').innerText}\n*Pagamento:* ${document.getElementById('condicoes_pagamento').value}\n\nEstou te enviando o documento detalhado em PDF logo em seguida!`;
+        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue o resumo do seu documento da *FC Elétrica*:\n\n*Tipo:* ${docType}\n*Nº Doc:* ${document.getElementById('doc_numero').value}\n*Total Geral:* ${document.getElementById('p_valor_total').innerText}\n\nEstou te enviando o documento detalhado em PDF logo em seguida!`;
     }
 
     function enviarWhatsApp() {
