@@ -32,40 +32,43 @@
             background-color: var(--bg);
             color: var(--text);
             line-height: 1.6;
-            padding: 20px;
+            padding: 10px;
         }
 
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+        }
+
+        /* Container configurado estritamente para uma única coluna centralizada */
         .container {
-            max-width: 1200px;
+            max-width: 850px; /* Largura ideal para preenchimento confortável em qualquer tela */
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 20px;
         }
 
-        @media (min-width: 900px) {
-            .container {
-                grid-template-columns: 1.2fr 0.8fr;
-            }
-            .panel-preview {
-                position: sticky;
-                top: 20px;
-                height: calc(100vh - 40px);
-                overflow-y: auto;
-            }
+        /* Força os blocos de formulário e visualização a ocuparem 100% da largura */
+        .panel-forms, .panel-preview {
+            display: block;
+            width: 100%;
         }
 
         .card {
             background: var(--card-bg);
             border-radius: 8px;
-            padding: 24px;
+            padding: 16px;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             border: 1px solid #e2e8f0;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .card { padding: 24px; margin-bottom: 20px; }
         }
 
         h2 {
-            font-size: 1.25rem;
+            font-size: 1.15rem;
             color: var(--primary);
             margin-bottom: 16px;
             border-bottom: 2px solid var(--accent);
@@ -75,24 +78,33 @@
             justify-content: space-between;
         }
 
+        /* Ajustes dos grids internos dos formulários */
         .grid-2 {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 12px;
+        }
+
+        @media (min-width: 500px) {
+            .grid-2 { grid-template-columns: 1fr 1fr; }
         }
 
         .grid-3 {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 12px;
+        }
+
+        @media (min-width: 500px) {
+            .grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         }
 
         .form-group {
             margin-bottom: 12px;
         }
 
-        .form-group.full {
-            grid-column: span 2;
+        @media (min-width: 500px) {
+            .form-group.full { grid-column: span 2; }
         }
 
         label {
@@ -197,13 +209,19 @@
             margin-top: 5px;
         }
 
+        /* Estilos do Bloco de Visualização (Preview) */
         .preview-doc {
             background: white;
             border: 1px solid #d1d5db;
-            padding: 30px;
-            min-height: 700px;
+            padding: 15px;
+            min-height: 600px;
             font-size: 0.85rem;
             color: #334155;
+            margin-bottom: 15px;
+        }
+
+        @media (min-width: 600px) {
+            .preview-doc { padding: 30px; min-height: 700px; }
         }
 
         .preview-header {
@@ -216,7 +234,11 @@
         }
 
         .preview-logo-placeholder {
-            width: 120px;
+            width: 90px;
+        }
+
+        @media (min-width: 600px) {
+            .preview-logo-placeholder { width: 120px; }
         }
 
         .preview-logo-placeholder img {
@@ -261,7 +283,7 @@
         }
 
         .preview-signatures {
-            margin-top: 50px;
+            margin-top: 40px;
             display: flex;
             justify-content: space-between;
         }
@@ -271,19 +293,27 @@
             text-align: center;
             border-top: 1px solid #94a3b8;
             padding-top: 5px;
+            font-size: 0.8rem;
         }
         
         .sig-line.center-sig {
-            width: 60%;
+            width: 70%;
             margin: 0 auto;
             float: none;
         }
 
+        /* Botões de Ação no rodapé */
         .action-buttons {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr;
             gap: 10px;
-            margin-top: 15px;
+            margin-top: 5px;
+            margin-bottom: 30px;
+        }
+
+        @media (min-width: 500px) {
+            .action-buttons { grid-template-columns: 1fr 1fr; }
+            .btn-pdf { grid-column: span 2; }
         }
 
         .btn-action {
@@ -299,7 +329,7 @@
 
         .btn-whatsapp { background-color: #25d366; }
         .btn-email { background-color: #3b82f6; }
-        .btn-pdf { background-color: #ef4444; grid-column: span 2; }
+        .btn-pdf { background-color: #ef4444; }
 
         .file-upload-wrapper {
             background: #f8fafc;
@@ -310,11 +340,13 @@
         }
 
         @media print {
+            .action-buttons { display: none !important; }
             body * { visibility: hidden; }
             #printable_area, #printable_area * { visibility: visible; }
             #printable_area { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; }
         }
     </style>
+    
 </head>
 <body>
 
