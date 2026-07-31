@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Orçamentos - FC Elétrica</title>
+    <title>Sistema de Gestão - FC Elétrica</title>
+    
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="apple-touch-icon" href="logo.png">
+    
     <style>
         :root {
             --primary: #1e293b;
@@ -35,14 +39,16 @@
             body { padding: 20px; }
         }
 
+        /* Container configurado estritamente para uma única coluna centralizada */
         .container {
-            max-width: 850px;
+            max-width: 850px; /* Largura ideal para preenchimento confortável em qualquer tela */
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
+        /* Força os blocos de formulário e visualização a ocuparem 100% da largura */
         .panel-forms, .panel-preview {
             display: block;
             width: 100%;
@@ -72,6 +78,7 @@
             justify-content: space-between;
         }
 
+        /* Ajustes dos grids internos dos formulários */
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr;
@@ -202,6 +209,7 @@
             margin-top: 5px;
         }
 
+        /* Estilos do Bloco de Visualização (Preview) */
         .preview-doc {
             background: white;
             border: 1px solid #d1d5db;
@@ -287,7 +295,14 @@
             padding-top: 5px;
             font-size: 0.8rem;
         }
+        
+        .sig-line.center-sig {
+            width: 70%;
+            margin: 0 auto;
+            float: none;
+        }
 
+        /* Botões de Ação no rodapé */
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr;
@@ -324,15 +339,6 @@
             cursor: pointer;
         }
 
-        .cost-badge {
-            font-size: 0.75rem;
-            background: #f1f5f9;
-            padding: 2px 6px;
-            border-radius: 4px;
-            color: var(--text-muted);
-            font-weight: normal;
-        }
-
         @media print {
             .action-buttons { display: none !important; }
             body * { visibility: hidden; }
@@ -340,674 +346,596 @@
             #printable_area { position: absolute; left: 0; top: 0; width: 100%; border: none; padding: 0; }
         }
     </style>
+    
 </head>
 <body>
 
 <div class="container">
-    <!-- PAINEL DE FORMULÁRIOS -->
     <div class="panel-forms">
-        
-        <!-- Tipo de Documento -->
         <div class="card">
             <h2>Tipo de Documento</h2>
             <div class="doc-type-selector">
-                <button type="button" class="doc-type-btn active" onclick="setDocType('Orçamento')">Orçamento</button>
-                <button type="button" class="doc-type-btn" onclick="setDocType('Recibo')">Recibo</button>
+                <div class="doc-type-btn active" id="btn_orc" onclick="setDocType('Orçamento')">Orçamento</div>
+                <div class="doc-type-btn" id="btn_rec" onclick="setDocType('Recibo')">Recibo</div>
             </div>
         </div>
 
-        <!-- Dados da Empresa -->
         <div class="card">
             <h2>Dados da Empresa & Logo</h2>
             <div class="grid-2">
                 <div class="form-group">
-                    <label>Logo da Empresa</label>
-                    <div class="file-upload-wrapper" onclick="document.getElementById('logo_input').click()">
-                        <span id="logo_status">Alterar Logo (Clique)</span>
-                        <input type="file" id="logo_input" accept="image/*" style="display:none" onchange="handleLogo(this)">
+                    <label>Logo</label>
+                    <div class="file-upload-wrapper" onclick="document.getElementById('upload_logo').click()">
+                        <input type="file" id="upload_logo" accept="image/*" onchange="carregarLogoLocal(this)" style="display:none;">
+                        <span id="upload_label">Alterar Logo (Clique)</span>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Telefone de Contato</label>
+                    <label>Nome da Empresa</label>
+                    <input type="text" id="empresa_nome" value="FC Elétrica" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Telefone</label>
                     <input type="text" id="empresa_tel" value="(27) 99999-8888" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>E-mail</label>
+                    <input type="email" id="empresa_email" value="contato@fceletrica.com.br" oninput="updatePreview()">
                 </div>
             </div>
         </div>
 
-        <!-- Gerenciar Lista de Busca de Serviços -->
         <div class="card">
-            <h2>Gerenciar Lista de Serviços <span class="cost-badge">Banco de Dados Local</span></h2>
+            <h2>Gerenciar Lista de Serviços</h2>
             <div class="grid-2">
                 <div class="form-group">
                     <label>Nome do Novo Serviço</label>
-                    <input type="text" id="new_service_name" placeholder="Ex: Instalação de Refletor LED">
+                    <input type="text" id="novo_servico_nome" placeholder="Ex: Instalação de Refletor LED">
                 </div>
                 <div class="form-group">
                     <label>Preço Base (R$)</label>
-                    <input type="number" id="new_service_price" placeholder="Ex: 120.00" step="0.01">
+                    <input type="number" id="novo_servico_preco" placeholder="150.00">
                 </div>
             </div>
-            <button type="button" class="btn-add" onclick="addNewServiceToList()">Adicionar à Lista de Busca</button>
-            
-            <table class="selected-items-table" style="margin-top: 15px;">
-                <thead>
-                    <tr>
-                        <th>Serviço Cadastrado</th>
-                        <th>Preço Base</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="local_services_table_body">
-                    <!-- Preenchido via JS -->
-                </tbody>
-            </table>
+            <button class="btn-add" onclick="adicionarNovoServicoAoBanco()">Adicionar à Lista de Busca</button>
+            <div id="lista_gerenciável_servicos" style="margin-top:10px; max-height:100px; overflow-y:auto; font-size:0.8rem; border:1px solid var(--border); padding:5px;"></div>
         </div>
 
-        <!-- Custos Ocultos Operacionais (NOVA LISTA DINÂMICA) -->
-        <div class="card" style="border: 1px dashed var(--accent);">
-            <h2>Custos Ocultos da Operação <span class="cost-badge">Diluição Automática</span></h2>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
-                Insira aqui os valores de ajudantes, alimentação, gasolina, etc. Eles serão distribuídos e somados de forma <strong>proporcional e invisível</strong> no preço dos serviços exibidos para o cliente.
-            </p>
+        <div class="card">
+            <h2>Dados do Cliente</h2>
+            <div class="grid-3" id="campos_prazos_bloco">
+                <div class="form-group">
+                    <label>Nº Doc</label>
+                    <input type="text" id="doc_numero" value="ORC-2026-001" oninput="updatePreview()">
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="doc_data" oninput="updatePreview()">
+                </div>
+                <div class="form-group" id="campo_validade_wrapper">
+                    <label>Validade / Prazo</label>
+                    <input type="text" id="doc_validade" value="15 dias" oninput="updatePreview()">
+                </div>
+            </div>
             <div class="grid-2">
                 <div class="form-group">
-                    <label>Descrição do Custo</label>
-                    <input type="text" id="cost_name" placeholder="Ex: Diária de Ajudante, Gasolina, Almoço...">
+                    <label>Nome do Cliente</label>
+                    <input type="text" id="cliente_nome" oninput="updatePreview()">
                 </div>
                 <div class="form-group">
-                    <label>Valor do Custo (R$)</label>
-                    <input type="number" id="cost_value" placeholder="0.00" step="0.01">
+                    <label>Telefone</label>
+                    <input type="text" id="cliente_tel" oninput="updatePreview()">
+                </div>
+                <div class="form-group full">
+                    <label>Endereço</label>
+                    <input type="text" id="cliente_end" oninput="updatePreview()">
                 </div>
             </div>
-            <button type="button" class="btn-add" onclick="addCostToBudget()">Inserir nos Custos Ocultos</button>
-
-            <table class="selected-items-table">
-                <thead>
-                    <tr>
-                        <th>Custo Oculto</th>
-                        <th>Valor Base</th>
-                        <th>Ação</th>
-                    </tr>
-                </thead>
-                <tbody id="selected_costs_table_body">
-                    <!-- Custos adicionados dinamicamente aparecerão aqui -->
-                </tbody>
-            </table>
         </div>
 
-        <!-- Adicionar Mão de Obra ao Orçamento -->
         <div class="card">
             <h2>Mão de Obra e Serviços</h2>
-            <div class="grid-2">
-                <div class="form-group autocomplete-container">
-                    <label>Pesquisar Serviço</label>
-                    <input type="text" id="search_service_input" placeholder="Digite para buscar..." oninput="searchService(this.value)">
-                    <div id="autocomplete_list" class="autocomplete-items"></div>
-                </div>
-                <div class="form-group">
-                    <label>Quantidade</label>
-                    <input type="number" id="service_qty" value="1" min="1">
-                </div>
+            <div class="form-group autocomplete-container">
+                <label>Pesquisar Serviço</label>
+                <input type="text" id="busca_servico" placeholder="Digite para buscar..." autocomplete="off">
+                <div id="autocomplete_list" class="autocomplete-items"></div>
             </div>
-            <button type="button" class="btn-add" onclick="addServiceToBudget()">Inserir no Orçamento</button>
-
             <table class="selected-items-table">
                 <thead>
                     <tr>
                         <th>Serviço</th>
-                        <th>Qtd</th>
-                        <th>Preço Base</th>
-                        <th>Ação</th>
+                        <th style="width: 60px;">Qtd</th>
+                        <th style="width: 60px;">Un</th>
+                        <th style="width: 80px;">Unit (R$)</th>
+                        <th style="width: 40px;"></th>
                     </tr>
                 </thead>
-                <tbody id="selected_services_table_body">
-                    <!-- Serviços adicionados aparecerão aqui -->
-                </tbody>
+                <tbody id="servicos_selecionados_corpo"></tbody>
             </table>
         </div>
 
-        <!-- Detalhamento de Materiais -->
         <div class="card">
-            <h2>Detalhamento de Materiais <span class="cost-badge">Opcional</span></h2>
-            <div class="grid-3">
-                <div class="form-group" style="grid-column: span 2;">
+            <h2>Detalhamento de Materiais</h2>
+            <div class="grid-3" style="grid-template-columns: 1.5fr 0.6fr 0.9fr;">
+                <div class="form-group">
                     <label>Item / Descrição Material</label>
-                    <input type="text" id="mat_name" placeholder="Ex: Cabo Flexível 2.5mm">
+                    <input type="text" id="mat_nome" placeholder="Ex: Cabo Flexível 2.5mm">
                 </div>
                 <div class="form-group">
-                    <label>Qtd</label>
-                    <input type="number" id="mat_qty" value="1" min="1">
+                    <label>Qtd / Un</label>
+                    <div style="display:flex; gap:2px;">
+                        <input type="number" id="mat_qtd" placeholder="1" style="padding:4px;">
+                        <input type="text" id="mat_un" placeholder="Mts" style="padding:4px;">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Valor Unitário (R$)</label>
-                    <input type="number" id="mat_unit_price" placeholder="0.00" step="0.01">
-                </div>
-                <div class="form-group" style="grid-column: span 2; display: flex; align-items: flex-end;">
-                    <button type="button" class="btn-add" style="width: 100%; margin-bottom: 12px;" onclick="addMaterialToBudget()">Adicionar Material</button>
+                    <label>Valor Unit (R$)</label>
+                    <input type="number" id="mat_preco" placeholder="2.50">
                 </div>
             </div>
-
+            <button class="btn-add" style="background:#3b82f6;" onclick="adicionarMaterialLista()">Adicionar Material</button>
+            
             <table class="selected-items-table">
                 <thead>
                     <tr>
                         <th>Material</th>
-                        <th>Qtd</th>
-                        <th>Val. Unit</th>
-                        <th>Ação</th>
+                        <th style="width: 60px;">Qtd</th>
+                        <th style="width: 60px;">Un</th>
+                        <th style="width: 80px;">Unit</th>
+                        <th style="width: 40px;"></th>
                     </tr>
                 </thead>
-                <tbody id="selected_materials_table_body">
-                    <!-- Materiais adicionados -->
-                </tbody>
+                <tbody id="materiais_selecionados_corpo"></tbody>
             </table>
         </div>
 
-        <!-- Dados do Cliente -->
         <div class="card">
-            <h2>Dados do Cliente & Prazos</h2>
+            <h2>Taxas Adicionais & Descontos</h2>
             <div class="grid-2">
                 <div class="form-group">
-                    <label>Nº Doc</label>
-                    <input type="text" id="doc_number" value="ORC-2026-001" oninput="updatePreview()">
+                    <label>Descrição da Taxa Adicional</label>
+                    <input type="text" id="outros_custos_desc" placeholder="Ex: Taxa de Deslocamento / Urgência" oninput="calculateTotals()">
                 </div>
                 <div class="form-group">
-                    <label>Data</label>
-                    <input type="date" id="doc_date" onchange="updatePreview()">
-                </div>
-                <div class="form-group full">
-                    <label>Nome do Cliente</label>
-                    <input type="text" id="cliente_nome" placeholder="Nome Completo / Empresa" oninput="updatePreview()">
-                </div>
-                <div class="form-group full">
-                    <label>Endereço</label>
-                    <input type="text" id="cliente_endereco" placeholder="Rua, Bairro, Cidade" oninput="updatePreview()">
+                    <label>Valor da Taxa (R$)</label>
+                    <input type="number" id="outros_custos" value="0" oninput="calculateTotals()">
                 </div>
                 <div class="form-group">
-                    <label>Validade da Proposta</label>
-                    <input type="text" id="doc_validade" value="15 dias" oninput="updatePreview()">
+                    <label>Desconto Especial (R$)</label>
+                    <input type="number" id="desconto_total" value="0" oninput="calculateTotals()">
                 </div>
-                <div class="form-group">
-                    <label>Prazo de Execução</label>
-                    <input type="text" id="doc_prazo" value="2 dias úteis" oninput="updatePreview()">
+                <div class="form-group" id="campo_pagamento_wrapper">
+                    <label>Condições de Pagamento</label>
+                    <input type="text" id="condicoes_pagamento" value="50% de entrada e 50% na entrega" oninput="updatePreview()">
                 </div>
             </div>
         </div>
 
-        <!-- Taxas e Descontos Finais -->
         <div class="card">
-            <h2>Desconto Final (Visível)</h2>
-            <div class="grid-2">
-                <div class="form-group">
-                    <label>Desconto Total (R$)</label>
-                    <input type="number" id="doc_desconto" value="0" step="0.01" oninput="updatePreview()">
-                </div>
+            <h2>Descrição Adicional & Textos</h2>
+            <div class="form-group">
+                <label>Descrição / Detalhes dos Serviços Prestados</label>
+                <textarea id="servico_descricao" rows="2" placeholder="Detalhes específicos deste atendimento..." oninput="updatePreview()"></textarea>
+            </div>
+            <div class="form-group" id="zona_obs_input">
+                <label>Observações Técnicas Padrão (Apenas Orçamento)</label>
+                <textarea id="observacoes_padrao" rows="4" oninput="updatePreview()">- Não nos responsabilizamos pelo fechamento de rasgos em alvenaria, gesso ou pintura posterior.
+- A infraestrutura de passagem (eletrodutos desobstruídos) é de responsabilidade do cliente.
+- Caso os materiais não sejam fornecidos na data combinada, o cronograma poderá sofrer alterações.</textarea>
             </div>
         </div>
     </div>
 
-    <!-- PAINEL DE VISUALIZAÇÃO (PREVIEW) -->
     <div class="panel-preview">
-        <div class="card">
-            <h2>Visualização Impressa do Documento</h2>
-            
-            <div class="preview-doc" id="printable_area">
-                <!-- Cabeçalho -->
-                <div class="preview-header">
-                    <div class="preview-logo-placeholder" id="preview_logo_container">
-                        <div style="width:100%; height:60px; background:#e2e8f0; display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8">FC ELÉTRICA</div>
-                    </div>
-                    <div class="preview-title-block">
-                        <h1 id="preview_doc_type" style="font-size: 1.5rem; color: #1e293b;">ORÇAMENTO</h1>
-                        <p style="font-weight: bold;" id="preview_doc_id">Nº ORC-2026-001</p>
-                        <p id="preview_doc_date">Data: 31/07/2026</p>
-                        <p id="preview_empresa_tel">Contato: (27) 99999-8888</p>
-                    </div>
-                </div>
-
-                <!-- Dados do Cliente -->
-                <div class="preview-section">
-                    <h3>Dados do Cliente</h3>
-                    <p><strong>Cliente:</strong> <span id="preview_cliente_nome">---</span></p>
-                    <p><strong>Endereço:</strong> <span id="preview_cliente_endereco">---</span></p>
-                </div>
-
-                <!-- Tabela de Mão de Obra (Onde a mágica da diluição acontece) -->
-                <div class="preview-section">
-                    <h3>Detalhamento dos Serviços (Mão de Obra)</h3>
-                    <table class="selected-items-table" style="font-size: 0.8rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 60%;">Descrição do Serviço</th>
-                                <th style="text-align: center;">Qtd</th>
-                                <th style="text-align: right;">Preço Unit.</th>
-                                <th style="text-align: right;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="preview_services_body">
-                            <tr><td colspan="4" style="text-align: center; color: #94a3b8;">Nenhum serviço inserido.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Tabela de Materiais -->
-                <div class="preview-section" id="preview_materials_section" style="display:none;">
-                    <h3>Materiais Aplicados</h3>
-                    <table class="selected-items-table" style="font-size: 0.8rem;">
-                        <thead>
-                            <tr>
-                                <th style="width: 60%;">Descrição do Material</th>
-                                <th style="text-align: center;">Qtd</th>
-                                <th style="text-align: right;">Val. Unit</th>
-                                <th style="text-align: right;">Total</th>
-                            </tr>
-                        </thead>
-                        <tbody id="preview_materials_body">
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- Termos e Condições -->
-                <div class="preview-section">
-                    <h3>Condições Técnicas e Prazos</h3>
-                    <div class="grid-2" style="font-size: 0.8rem;">
-                        <div>• <strong>Validade da Proposta:</strong> <span id="preview_doc_validade">15 dias</span></div>
-                        <div>• <strong>Prazo de Execução estimado:</strong> <span id="preview_doc_prazo">2 dias úteis</span></div>
-                    </div>
-                </div>
-
-                <!-- Totais Finais -->
-                <div class="preview-totals">
-                    <div class="preview-total-row" id="row_subtotal_servicos">Subtotal Serviços: R$ 0,00</div>
-                    <div class="preview-total-row" id="row_subtotal_materiais" style="display:none;">Subtotal Materiais: R$ 0,00</div>
-                    <div class="preview-total-row" id="row_desconto" style="color: #ef4444; display:none;">Desconto: - R$ 0,00</div>
-                    <div class="preview-total-row grand-total" id="row_total_geral">TOTAL: R$ 0,00</div>
-                </div>
-
-                <!-- Assinaturas -->
-                <div class="preview-signatures" id="preview_signatures_container">
-                    <div class="sig-line">FC Elétrica</div>
-                    <div class="sig-line">Aceite do Cliente</div>
+        <div class="preview-doc" id="printable_area">
+            <div class="preview-header">
+                <div id="preview_logo_zone" class="preview-logo-placeholder"></div>
+                <div class="preview-title-block">
+                    <h1 id="p_titulo_doc">Orçamento</h1>
+                    <p><strong>Nº Doc:</strong> <span id="p_doc_num">ORC-2026-001</span></p>
+                    <p><strong>Data:</strong> <span id="p_doc_data">--/--/----</span></p>
                 </div>
             </div>
 
-            <!-- Botões de Ação rápidas -->
-            <div class="action-buttons">
-                <button type="button" class="btn-action btn-whatsapp" onclick="sendWhatsApp()">Enviar via WhatsApp</button>
-                <button type="button" class="btn-action btn-email" onclick="sendEmail()">Enviar por E-mail</button>
-                <button type="button" class="btn-action btn-pdf" onclick="window.print()">Imprimir / Gerar PDF nativo</button>
+            <div class="preview-grid-2 preview-section" style="display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+                <div>
+                    <strong>PRESTADOR:</strong><br>
+                    <span id="p_empresa_nome" style="font-weight: bold;">FC Elétrica</span><br>
+                    Tel: <span id="p_empresa_tel">(27) 99999-8888</span><br>
+                    E-mail: <span id="p_empresa_email">contato@fceletrica.com.br</span>
+                </div>
+                <div style="text-align: right;">
+                    <strong>CLIENTE:</strong><br>
+                    <span id="p_cliente_nome">---</span><br>
+                    Tel: <span id="p_cliente_tel">---</span><br>
+                    End: <span id="p_cliente_end">---</span>
+                </div>
             </div>
+
+            <!-- BLOCO DE DECLARAÇÃO EXCLUSIVO DO RECIBO -->
+            <div class="preview-section" id="p_bloco_declaracao" style="display: none; border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 20px; background: #f8fafc; border-radius: 4px;">
+                <h3 style="background:none; border-left:none; padding:0; font-weight:bold; margin-bottom: 5px;">Declaração</h3>
+                <p style="font-size: 1rem; line-height: 1.5; color:#0f172a;">
+                    Declaro por meio deste documento, ter recebido a quantia de <strong id="p_declara_valor">R$ 0,00</strong> referente aos serviços e/ou materiais descritos abaixo neste documento.
+                </p>
+            </div>
+
+            <div class="preview-section">
+                <h3>Descrição do Serviço</h3>
+                <p id="p_servico_descricao" style="white-space: pre-wrap;">Nenhuma descrição informada.</p>
+            </div>
+
+            <div class="preview-section">
+                <h3>Detalhamento de Serviços (Mão de Obra)</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th>Descrição</th>
+                            <th style="text-align: center; width: 50px;">Qtd</th>
+                            <th style="text-align: center; width: 50px;">Un</th>
+                            <th style="text-align: right; width: 90px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_servicos_corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="preview-section" id="preview_secao_materiais">
+                <h3>Detalhamento de Materiais</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th>Material</th>
+                            <th style="text-align: center; width: 50px;">Qtd</th>
+                            <th style="text-align: center; width: 50px;">Un</th>
+                            <th style="text-align: right; width: 90px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_servicos_corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="preview-section" id="preview_secao_materiais">
+                <h3>Detalhamento de Materiais</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th>Material</th>
+                            <th style="text-align: center; width: 50px;">Qtd</th>
+                            <th style="text-align: center; width: 50px;">Un</th>
+                            <th style="text-align: right; width: 90px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_materiais_corpo"></tbody>
+                </table>
+            </div>
+
+            <div class="preview-totals">
+                <div class="preview-total-row"><span>Mão de Obra:</span><strong id="p_subtotal_mo">R$ 0,00</strong></div>
+                <div class="preview-total-row"><span>Materiais Aplicados:</span><strong id="p_subtotal_mat">R$ 0,00</strong></div>
+                <div class="preview-total-row" id="p_row_outros"><span><span id="p_outros_label">Outros Custos</span>:</span><strong id="p_subtotal_outros">R$ 0,00</strong></div>
+                <div class="preview-total-row" id="p_row_desconto" style="color: #10b981;"><span>Desconto:</span><strong id="p_subtotal_desconto">-R$ 0,00</strong></div>
+                <div class="preview-total-row grand-total"><span>VALOR TOTAL:</span><span id="p_valor_total">R$ 0,00</span></div>
+            </div>
+
+            <div id="p_zona_pagamento" style="margin-top: 15px; font-size: 0.8rem; background: #f8fafc; padding: 8px;">
+                <strong>Condições de Pagamento:</strong> <span id="p_condicoes">50% de entrada e 50% na entrega</span>
+            </div>
+
+            <div class="preview-section" style="margin-top: 15px;" id="p_zona_obs">
+                <strong style="font-size: 0.8rem; display:block; margin-bottom:2px;">Observações Técnicas:</strong>
+                <p id="p_observacoes" style="white-space: pre-wrap; font-size: 0.75rem; color: #64748b;"></p>
+            </div>
+
+            <div id="p_zona_validade" style="margin-top: 15px; font-size: 0.75rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 5px;">
+                <p><strong>Validade:</strong> <span id="p_validade">15 dias</span> | <strong>Garantia:</strong> 90 dias conforme legislação.</p>
+            </div>
+
+            <div class="preview-signatures" id="p_zona_assinaturas">
+                <div class="sig-line" id="p_sig_prestador">Assinatura do Prestador</div>
+                <div class="sig-line" id="p_sig_cliente">Aceite do Cliente</div>
+            </div>
+        </div>
+
+        <div class="action-buttons">
+            <button class="btn-action btn-pdf" onclick="window.print()">Salvar como PDF / Imprimir</button>
+            <button class="btn-action btn-whatsapp" onclick="enviarWhatsApp()">Copiar e Enviar WhatsApp</button>
+            <button class="btn-action btn-email" onclick="enviarEmail()">Enviar E-mail</button>
         </div>
     </div>
 </div>
 
 <script>
-    // Banco de dados inicializado com alguns serviços padrão
-    let serviceDatabase = [
-        { name: "Visita Técnica Padrão", price: 150.00 },
-        { name: "Instalação de Quadro 16 Disjuntores", price: 825.00 },
-        { name: "Instalação de Luminária LED", price: 65.00 },
-        { name: "Instalação de Tomada Dupla", price: 45.00 },
-        { name: "Instalação de Chuveiro Elétrico", price: 120.00 }
+    let currentLogoSrc = localStorage.getItem('fc_logo_saved') || "";
+    let docType = "Orçamento";
+    
+    let bancoServicos = JSON.parse(localStorage.getItem('fc_banco_servicos')) || [
+        { nome: "Quadro elétrico 24 Disjuntores - Instalação", preco: 1175.00 },
+        { nome: "Quadro elétrico 16 Disjuntores - Instalação", preco: 825.00 },
+        { nome: "Instalação de Tomada Simples/Dupla", preco: 45.00 },
+        { nome: "Instalação de Luminária LED", preco: 65.00 }
     ];
 
-    let selectedServices = [];
-    let selectedMaterials = [];
-    let selectedCosts = []; // Array da nova lista dinâmica de custos ocultos
-    let currentDocType = "Orçamento";
-    let logoBase64 = "";
+    let servicosSelecionados = [];
+    let materiaisSelecionados = [];
 
-    // Iniciar data atual na tela
-    document.getElementById('doc_date').valueAsDate = new Date();
-
-    function renderLocalDatabase() {
-        const tbody = document.getElementById('local_services_table_body');
-        tbody.innerHTML = "";
-        serviceDatabase.forEach((item, index) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>R$ ${item.price.toFixed(2)}</td>
-                    <td><button class="btn-danger" onclick="removeServiceFromDatabase(${index})">✕</button></td>
-                </tr>
-            `;
-        });
-    }
-
-    function removeServiceFromDatabase(index) {
-        serviceDatabase.splice(index, 1);
-        renderLocalDatabase();
-    }
-
-    function addNewServiceToList() {
-        const nameInput = document.getElementById('new_service_name');
-        const priceInput = document.getElementById('new_service_price');
-        
-        if(!nameInput.value || !priceInput.value) {
-            alert("Preencha o nome e o preço base do serviço!");
-            return;
-        }
-
-        serviceDatabase.push({
-            name: nameInput.value.trim(),
-            price: parseFloat(priceInput.value)
-        });
-
-        nameInput.value = "";
-        priceInput.value = "";
-        renderLocalDatabase();
-    }
-
-    function searchService(query) {
-        const listContainer = document.getElementById('autocomplete_list');
-        listContainer.innerHTML = "";
-        if (!query) return;
-
-        const filtered = serviceDatabase.filter(item => 
-            item.name.toLowerCase().includes(query.toLowerCase())
-        );
-
-        filtered.forEach(item => {
-            const div = document.createElement('div');
-            div.innerHTML = `${item.name} <span style="color:var(--text-muted)">- R$ ${item.price.toFixed(2)}</span>`;
-            div.onclick = () => {
-                document.getElementById('search_service_input').value = item.name;
-                document.getElementById('search_service_input').dataset.price = item.price;
-                listContainer.innerHTML = "";
-            };
-            listContainer.appendChild(div);
-        });
-    }
-
-    // --- MANIPULAÇÃO DA LISTA DINÂMICA DE CUSTOS OCULTOS ---
-    function addCostToBudget() {
-        const nameInput = document.getElementById('cost_name');
-        const valueInput = document.getElementById('cost_value');
-        const value = parseFloat(valueInput.value);
-
-        if (!nameInput.value || isNaN(value) || value <= 0) {
-            alert("Insira uma descrição válida e um valor maior que R$ 0,00!");
-            return;
-        }
-
-        selectedCosts.push({
-            name: nameInput.value.trim(),
-            price: value
-        });
-
-        nameInput.value = "";
-        valueInput.value = "";
-
-        renderSelectedCosts();
-        updatePreview();
-    }
-
-    function removeCostFromBudget(index) {
-        selectedCosts.splice(index, 1);
-        renderSelectedCosts();
-        updatePreview();
-    }
-
-    function renderSelectedCosts() {
-        const tbody = document.getElementById('selected_costs_table_body');
-        tbody.innerHTML = "";
-        selectedCosts.forEach((item, index) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>R$ ${item.price.toFixed(2)}</td>
-                    <td><button class="btn-danger" onclick="removeCostFromBudget(${index})">✕</button></td>
-                </tr>
-            `;
-        });
-    }
-
-    // --- ADICIONAR SERVIÇOS E MATERIAIS ---
-    function addServiceToBudget() {
-        const input = document.getElementById('search_service_input');
-        const qtyInput = document.getElementById('service_qty');
-        const price = parseFloat(input.dataset.price);
-
-        if (!input.value || isNaN(price)) {
-            alert("Selecione um serviço válido da lista de buscas!");
-            return;
-        }
-
-        selectedServices.push({
-            name: input.value,
-            basePrice: price,
-            qty: parseInt(qtyInput.value) || 1
-        });
-
-        input.value = "";
-        input.dataset.price = "";
-        qtyInput.value = "1";
-        
-        renderSelectedServices();
-        updatePreview();
-    }
-
-    function removeServiceFromBudget(index) {
-        selectedServices.splice(index, 1);
-        renderSelectedServices();
-        updatePreview();
-    }
-
-    function renderSelectedServices() {
-        const tbody = document.getElementById('selected_services_table_body');
-        tbody.innerHTML = "";
-        selectedServices.forEach((item, index) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>${item.qty}</td>
-                    <td>R$ ${item.basePrice.toFixed(2)}</td>
-                    <td><button class="btn-danger" onclick="removeServiceFromBudget(${index})">✕</button></td>
-                </tr>
-            `;
-        });
-    }
-
-    function addMaterialToBudget() {
-        const nameInput = document.getElementById('mat_name');
-        const qtyInput = document.getElementById('mat_qty');
-        const priceInput = document.getElementById('mat_unit_price');
-
-        if(!nameInput.value || !priceInput.value) {
-            alert("Preencha o nome e o valor unitário do material!");
-            return;
-        }
-
-        selectedMaterials.push({
-            name: nameInput.value.trim(),
-            qty: parseInt(qtyInput.value) || 1,
-            price: parseFloat(priceInput.value)
-        });
-
-        nameInput.value = "";
-        qtyInput.value = "1";
-        priceInput.value = "";
-
-        renderSelectedMaterials();
-        updatePreview();
-    }
-
-    function removeMaterialFromBudget(index) {
-        selectedMaterials.splice(index, 1);
-        renderSelectedMaterials();
-        updatePreview();
-    }
-
-    function renderSelectedMaterials() {
-        const tbody = document.getElementById('selected_materials_table_body');
-        tbody.innerHTML = "";
-        selectedMaterials.forEach((item, index) => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>${item.name}</td>
-                    <td>${item.qty}</td>
-                    <td>R$ ${item.price.toFixed(2)}</td>
-                    <td><button class="btn-danger" onclick="removeMaterialFromBudget(${index})">✕</button></td>
-                </tr>
-            `;
-        });
-    }
+    document.getElementById('doc_data').valueAsDate = new Date();
 
     function setDocType(type) {
-        currentDocType = type;
-        const buttons = document.querySelectorAll('.doc-type-btn');
-        buttons.forEach(btn => btn.classList.remove('active'));
-        event.target.classList.add('active');
+        docType = type;
+        document.querySelectorAll('.doc-type-btn').forEach(btn => btn.classList.remove('active'));
+        if(type === 'Orçamento') document.getElementById('btn_orc').classList.add('active');
+        if(type === 'Recibo') document.getElementById('btn_rec').classList.add('active');
         
-        const sigContainer = document.getElementById('preview_signatures_container');
-        if(type === 'Recibo') {
-            sigContainer.innerHTML = `<div class="sig-line center-sig" style="width:70%; margin: 40px auto 0 auto;">FC Elétrica - Declaro ter recebido o valor integral</div>`;
+        const blocoCamposPrazos = document.getElementById('campos_prazos_bloco');
+        const campoValidadeInputWrapper = document.getElementById('campo_validade_wrapper');
+        const campoPagamentoInputWrapper = document.getElementById('campo_pagamento_wrapper');
+        const zonaObsInput = document.getElementById('zona_obs_input');
+
+        if (type === 'Recibo') {
+            // Ajustes visuais nos inputs
+            campoValidadeInputWrapper.style.display = 'none';
+            campoPagamentoInputWrapper.style.display = 'none';
+            blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr';
+            zonaObsInput.style.display = 'none';
+
+            // Ajustes visuais no documento impresso/preview
+            document.getElementById('p_bloco_declaracao').style.display = 'block';
+            document.getElementById('p_zona_pagamento').style.display = 'none';
+            document.getElementById('p_zona_obs').style.display = 'none';
+            document.getElementById('p_zona_validade').style.display = 'none';
+            
+            // Ajuste nas assinaturas (apenas prestador centralizado)
+            document.getElementById('p_sig_cliente').style.display = 'none';
+            document.getElementById('p_sig_prestador').className = "sig-line center-sig";
+            document.getElementById('p_sig_prestador').innerText = "Assinatura do Emitente (FC Elétrica)";
         } else {
-            sigContainer.innerHTML = `<div class="sig-line">FC Elétrica</div><div class="sig-line">Aceite do Cliente</div>`;
+            // Restaura os campos para Orçamento
+            campoValidadeInputWrapper.style.display = 'block';
+            campoPagamentoInputWrapper.style.display = 'block';
+            blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr 1fr';
+            zonaObsInput.style.display = 'block';
+
+            document.getElementById('p_bloco_declaracao').style.display = 'none';
+            document.getElementById('p_zona_pagamento').style.display = 'block';
+            document.getElementById('p_zona_obs').style.display = 'block';
+            document.getElementById('p_zona_validade').style.display = 'block';
+            
+            document.getElementById('p_sig_cliente').style.display = 'block';
+            document.getElementById('p_sig_prestador').className = "sig-line";
+            document.getElementById('p_sig_prestador').innerText = "Assinatura do Prestador";
         }
         
         updatePreview();
     }
 
-    function handleLogo(input) {
+    function carregarLogoLocal(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = function(e) {
-                logoBase64 = e.target.result;
-                document.getElementById('logo_status').innerText = "Logo Carregada ✔";
+                currentLogoSrc = e.target.result;
+                localStorage.setItem('fc_logo_saved', currentLogoSrc);
                 updatePreview();
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
 
-    // --- ATUALIZAÇÃO DA FOLHA DE IMPRESSÃO COM RATEIO PROPORCIONAL ---
-    function updatePreview() {
-        document.getElementById('preview_doc_type').innerText = currentDocType.toUpperCase();
-        document.getElementById('preview_doc_id').innerText = "Nº " + document.getElementById('doc_number').value;
-        document.getElementById('preview_empresa_tel').innerText = "Contato: " + document.getElementById('empresa_tel').value;
-        document.getElementById('preview_cliente_nome').innerText = document.getElementById('cliente_nome').value || "---";
-        document.getElementById('preview_cliente_endereco').innerText = document.getElementById('cliente_endereco').value || "---";
-        document.getElementById('preview_doc_validade').innerText = document.getElementById('doc_validade').value;
-        document.getElementById('preview_doc_prazo').innerText = document.getElementById('doc_prazo').value;
-
-        const dateVal = document.getElementById('doc_date').value;
-        if(dateVal) {
-            const parts = dateVal.split('-');
-            document.getElementById('preview_doc_date').innerText = `Data: ${parts[2]}/${parts[1]}/${parts[0]}`;
-        }
-
-        const logoContainer = document.getElementById('preview_logo_container');
-        if(logoBase64) {
-            logoContainer.innerHTML = `<img src="${logoBase64}" alt="Logo">`;
-        }
-
-        // Soma dinamicamente todos os custos inseridos na tabela
-        let totalCustosOcultos = 0;
-        selectedCosts.forEach(item => {
-            totalCustosOcultos += item.price;
+    function atualizarPainelBanco() {
+        localStorage.setItem('fc_banco_servicos', JSON.stringify(bancoServicos));
+        const painel = document.getElementById('lista_gerenciável_servicos');
+        painel.innerHTML = '';
+        bancoServicos.forEach((s, idx) => {
+            painel.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                <span>${s.nome} (R$ ${s.preco})</span>
+                <span style="color:red; cursor:pointer; font-weight:bold;" onclick="removerDoBanco(${idx})">Remover</span>
+            </div>`;
         });
+    }
 
-        // Calcula o valor base seco total de mão de obra
-        let valorSecoServicosTotal = 0;
-        selectedServices.forEach(item => {
-            valorSecoServicosTotal += item.basePrice * item.qty;
+    function adicionarNovoServicoAoBanco() {
+        const nome = document.getElementById('novo_servico_nome').value;
+        const preco = parseFloat(document.getElementById('novo_servico_preco').value);
+        if(nome && preco) {
+            bancoServicos.push({ nome, preco });
+            document.getElementById('novo_servico_nome').value = '';
+            document.getElementById('novo_servico_preco').value = '';
+            atualizarPainelBanco();
+        }
+    }
+
+    function removerDoBanco(idx) {
+        bancoServicos.splice(idx, 1);
+        atualizarPainelBanco();
+    }
+
+    const buscaInput = document.getElementById('busca_servico');
+    const autocompleteList = document.getElementById('autocomplete_list');
+
+    buscaInput.addEventListener('input', function() {
+        const val = this.value;
+        autocompleteList.innerHTML = '';
+        if (!val) return false;
+        const filtrados = bancoServicos.filter(s => s.nome.toLowerCase().includes(val.toLowerCase()));
+        filtrados.forEach(item => {
+            const div = document.createElement('div');
+            div.innerHTML = `<strong>${item.nome}</strong> - R$ ${item.preco}`;
+            div.addEventListener('click', function() {
+                servicosSelecionados.push({
+                    nome: item.nome,
+                    precoUnitario: item.preco,
+                    quantidade: 1,
+                    unidade: "Un"
+                });
+                renderServicosTabela();
+                calculateTotals();
+                buscaInput.value = '';
+                autocompleteList.innerHTML = '';
+            });
+            autocompleteList.appendChild(div);
         });
+    });
 
-        // Fator de multiplicação proporcional
-        let fatorAcrescimo = 0;
-        if (valorSecoServicosTotal > 0 && totalCustosOcultos > 0) {
-            fatorAcrescimo = totalCustosOcultos / valorSecoServicosTotal;
-        }
+    function renderServicosTabela() {
+        const corpo = document.getElementById('servicos_selecionados_corpo');
+        corpo.innerHTML = '';
+        servicosSelecionados.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nome}</td>
+                <td><input type="number" value="${item.quantidade}" min="1" style="padding:2px;" oninput="alterarItem(${index}, 'quantidade', this.value)"></td>
+                <td><input type="text" value="${item.unidade}" style="padding:2px;" oninput="alterarItem(${index}, 'unidade', this.value)"></td>
+                <td>R$ ${item.precoUnitario}</td>
+                <td><button class="btn-danger" onclick="servicosSelecionados.splice(${index}, 1); renderServicosTabela(); calculateTotals();">X</button></td>
+            `;
+            corpo.appendChild(tr);
+        });
+    }
 
-        // Renderiza tabela de serviços aplicando a diluição
-        const servicesBody = document.getElementById('preview_services_body');
-        servicesBody.innerHTML = "";
-        let totalServicosComDilicao = 0;
-
-        if(selectedServices.length === 0) {
-            servicesBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #94a3b8;">Nenhum serviço inserido.</td></tr>`;
+    function alterarItem(index, campo, valor) {
+        if(campo === 'quantidade') {
+            servicosSelecionados[index].quantidade = parseFloat(valor) || 1;
         } else {
-            selectedServices.forEach(item => {
-                const precoUnitarioDiluido = item.basePrice + (item.basePrice * fatorAcrescimo);
-                const totalItemDiluido = precoUnitarioDiluido * item.qty;
-                totalServicosComDilicao += totalItemDiluido;
-
-                servicesBody.innerHTML += `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td style="text-align: center;">${item.qty}</td>
-                        <td style="text-align: right;">R$ ${precoUnitarioDiluido.toFixed(2)}</td>
-                        <td style="text-align: right;">R$ ${totalItemDiluido.toFixed(2)}</td>
-                    </tr>
-                `;
-            });
+            servicosSelecionados[index].unidade = valor;
         }
+        calculateTotals();
+    }
 
-        // Renderiza tabela de materiais (Não sofrem diluição)
-        const materialsBody = document.getElementById('preview_materials_body');
-        const materialsSection = document.getElementById('preview_materials_section');
-        materialsBody.innerHTML = "";
-        let totalMateriais = 0;
+    function adicionarMaterialLista() {
+        const nome = document.getElementById('mat_nome').value;
+        const qtd = parseFloat(document.getElementById('mat_qtd').value) || 1;
+        const un = document.getElementById('mat_un').value || 'Un';
+        const preco = parseFloat(document.getElementById('mat_preco').value) || 0;
 
-        if(selectedMaterials.length > 0) {
-            materialsSection.style.display = "block";
-            selectedMaterials.forEach(item => {
-                const totalItem = item.price * item.qty;
-                totalMateriais += totalItem;
-                materialsBody.innerHTML += `
-                    <tr>
-                        <td>${item.name}</td>
-                        <td style="text-align: center;">${item.qty}</td>
-                        <td style="text-align: right;">R$ ${item.price.toFixed(2)}</td>
-                        <td style="text-align: right;">R$ ${totalItem.toFixed(2)}</td>
-                    </tr>
-                `;
-            });
-        } else {
-            materialsSection.style.display = "none";
+        if (nome) {
+            materiaisSelecionados.push({ nome, quantidade: qtd, unidade: un, precoUnitario: preco });
+            document.getElementById('mat_nome').value = '';
+            document.getElementById('mat_qtd').value = '';
+            document.getElementById('mat_un').value = '';
+            document.getElementById('mat_preco').value = '';
+            renderMateriaisTabela();
+            calculateTotals();
         }
+    }
 
-        // Totais Finais do Documento
-        document.getElementById('row_subtotal_servicos').innerText = `Subtotal Serviços: R$ ${totalServicosComDilicao.toFixed(2)}`;
+    function renderMateriaisTabela() {
+        const corpo = document.getElementById('materiais_selecionados_corpo');
+        corpo.innerHTML = '';
+        materiaisSelecionados.forEach((item, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.nome}</td>
+                <td>${item.quantidade}</td>
+                <td>${item.unidade}</td>
+                <td>R$ ${item.precoUnitario.toFixed(2)}</td>
+                <td><button class="btn-danger" onclick="materiaisSelecionados.splice(${index}, 1); renderMateriaisTabela(); calculateTotals();">X</button></td>
+            `;
+            corpo.appendChild(tr);
+        });
+    }
+
+    function calculateTotals() {
+        let subtotalMO = servicosSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
+        let subtotalMAT = materiaisSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         
-        if(totalMateriais > 0) {
-            document.getElementById('row_subtotal_materiais').innerText = `Subtotal Materiais: R$ ${totalMateriais.toFixed(2)}`;
-            document.getElementById('row_subtotal_materiais').style.display = "flex";
+        const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
+        const outrosCustosDesc = document.getElementById('outros_custos_desc').value || 'Taxas Adicionais';
+        const descontoTotal = parseFloat(document.getElementById('desconto_total').value) || 0;
+        
+        const valorTotalGeral = (subtotalMO + subtotalMAT + outrosCustos) - descontoTotal;
+
+        const valorFormatado = valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
+
+        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        
+        document.getElementById('p_outros_label').innerText = outrosCustosDesc;
+        document.getElementById('p_subtotal_outros').innerText = `R$ ${outrosCustos.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_valor_total').innerText = `R$ ${valorFormatado}`;
+        
+        // Atualiza a declaração do Recibo com o valor total calculado dinamicamente
+        document.getElementById('p_declara_valor').innerText = `R$ ${valorFormatado}`;
+
+        if (outrosCustos === 0) document.getElementById('p_row_outros').style.display = 'none';
+        else document.getElementById('p_row_outros').style.display = 'flex';
+
+        if (descontoTotal === 0) document.getElementById('p_row_desconto').style.display = 'none';
+        else document.getElementById('p_row_desconto').style.display = 'flex';
+
+        // Preenche Serviços no Preview
+        const previewServicos = document.getElementById('preview_servicos_corpo');
+        previewServicos.innerHTML = '';
+        servicosSelecionados.forEach(item => {
+            previewServicos.innerHTML += `<tr>
+                <td style="padding: 4px 0;">${item.nome}</td>
+                <td style="text-align: center;">${item.quantidade}</td>
+                <td style="text-align: center;">${item.unidade}</td>
+                <td style="text-align: right;">R$ ${(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+            </tr>`;
+        });
+
+        // Preenche Materiais no Preview
+        const previewMateriais = document.getElementById('preview_materiais_corpo');
+        previewMateriais.innerHTML = '';
+        if(materiaisSelecionados.length === 0) {
+            document.getElementById('preview_secao_materiais').style.display = 'none';
         } else {
-            document.getElementById('row_subtotal_materiais').style.display = "none";
+            document.getElementById('preview_secao_materiais').style.display = 'block';
+            materiaisSelecionados.forEach(item => {
+                previewMateriais.innerHTML += `<tr>
+                    <td style="padding: 4px 0;">${item.nome}</td>
+                    <td style="text-align: center;">${item.quantidade}</td>
+                    <td style="text-align: center;">${item.unidade}</td>
+                    <td style="text-align: right;">R$ ${(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                </tr>`;
+            });
         }
 
-        const desconto = parseFloat(document.getElementById('doc_desconto').value) || 0;
-        if(desconto > 0) {
-            document.getElementById('row_desconto').innerText = `Desconto: - R$ ${desconto.toFixed(2)}`;
-            document.getElementById('row_desconto').style.display = "flex";
+        updatePreview();
+    }
+
+    function updatePreview() {
+        document.getElementById('p_titulo_doc').innerText = docType;
+        document.getElementById('p_doc_num').innerText = document.getElementById('doc_numero').value || '---';
+        const dataInput = document.getElementById('doc_data').value;
+        if(dataInput) document.getElementById('p_doc_data').innerText = new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR');
+
+        document.getElementById('p_empresa_nome').innerText = document.getElementById('empresa_nome').value || 'FC Elétrica';
+        document.getElementById('p_empresa_tel').innerText = document.getElementById('empresa_tel').value || '---';
+        document.getElementById('p_empresa_email').innerText = document.getElementById('empresa_email').value || '---';
+        document.getElementById('p_cliente_nome').innerText = document.getElementById('cliente_nome').value || '---';
+        document.getElementById('p_cliente_tel').innerText = document.getElementById('cliente_tel').value || '---';
+        document.getElementById('p_cliente_end').innerText = document.getElementById('cliente_end').value || '---';
+        document.getElementById('p_servico_descricao').innerText = document.getElementById('servico_descricao').value || "Nenhuma descrição informada.";
+        document.getElementById('p_validade').innerText = document.getElementById('doc_validade').value || '15 dias';
+        document.getElementById('p_condicoes').innerText = document.getElementById('condicoes_pagamento').value || 'A combinar';
+        document.getElementById('p_observacoes').innerText = document.getElementById('observacoes_padrao').value || '';
+
+        const logoZone = document.getElementById('preview_logo_zone');
+        if (currentLogoSrc) {
+            logoZone.innerHTML = `<img src="${currentLogoSrc}" alt="Logo">`;
         } else {
-            document.getElementById('row_desconto').style.display = "none";
+            logoZone.innerHTML = '<span style="font-size:0.75rem; color:#94a3b8;">[Sem Logo]</span>';
         }
-
-        const totalGeral = (totalServicosComDilicao + totalMateriais) - desconto;
-        document.getElementById('row_total_geral').innerText = `TOTAL: R$ ${totalGeral.toFixed(2)}`;
     }
 
-    function sendWhatsApp() {
-        const cliente = document.getElementById('cliente_nome').value || "Cliente";
-        const total = document.getElementById('row_total_geral').innerText;
-        const numDoc = document.getElementById('doc_number').value;
-        const msg = encodeURIComponent(`Olá ${cliente}, segue os detalhes do seu ${currentDocType} ${numDoc}. ${total}. Obrigado pela preferência!`);
-        window.open(`https://api.whatsapp.com/send?text=${msg}`);
+    function formatarTextoMensagem() {
+        return `Olá ${document.getElementById('cliente_nome').value || 'Cliente'}, segue o resumo do seu documento da *FC Elétrica*:\n\n*Tipo:* ${docType}\n*Nº Doc:* ${document.getElementById('doc_numero').value}\n*Total Geral:* ${document.getElementById('p_valor_total').innerText}\n\nEstou te enviando o documento detalhado em PDF logo em seguida!`;
     }
 
-    function sendEmail() {
-        const cliente = document.getElementById('cliente_nome').value || "";
-        const numDoc = document.getElementById('doc_number').value;
-        const subject = encodeURIComponent(`${currentDocType} ${numDoc} - FC Elétrica`);
-        const body = encodeURIComponent(`Olá ${cliente},\n\nSegue o ${currentDocType.toLowerCase()} solicitado.\n\nQualquer dúvida estou à disposição.`);
-        window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    function enviarWhatsApp() {
+        navigator.clipboard.writeText(formatarTextoMensagem());
+        alert("Resumo copiado! O WhatsApp vai abrir, cole o texto e lembre-se de enviar o PDF gerado.");
+        window.open(`https://api.whatsapp.com/send?phone=${document.getElementById('cliente_tel').value.replace(/\D/g, '')}&text=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
     }
 
-    renderLocalDatabase();
-    updatePreview();
+    function enviarEmail() {
+        window.open(`mailto:${document.getElementById('empresa_email').value}?subject=${docType} ${document.getElementById('doc_numero').value}&body=${encodeURIComponent(formatarTextoMensagem())}`, '_blank');
+    }
+
+    atualizarPainelBanco();
+    calculateTotals();
 </script>
-
 </body>
 </html>
