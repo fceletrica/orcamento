@@ -39,16 +39,14 @@
             body { padding: 20px; }
         }
 
-        /* Container configurado estritamente para uma única coluna centralizada */
         .container {
-            max-width: 850px; /* Largura ideal para preenchimento confortável em qualquer tela */
+            max-width: 850px;
             margin: 0 auto;
             display: flex;
             flex-direction: column;
             gap: 20px;
         }
 
-        /* Força os blocos de formulário e visualização a ocuparem 100% da largura */
         .panel-forms, .panel-preview {
             display: block;
             width: 100%;
@@ -78,7 +76,6 @@
             justify-content: space-between;
         }
 
-        /* Ajustes dos grids internos dos formulários */
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr;
@@ -218,7 +215,6 @@
             font-weight: normal;
         }
 
-        /* Estilos do Bloco de Visualização (Preview) */
         .preview-doc {
             background: white;
             border: 1px solid #d1d5db;
@@ -311,7 +307,6 @@
             float: none;
         }
 
-        /* Botões de Ação no rodapé */
         .action-buttons {
             display: grid;
             grid-template-columns: 1fr;
@@ -442,7 +437,6 @@
             </div>
         </div>
 
-        <!-- NOVO CARD: Custos Ocultos de Operação (Inserido Cirurgicamente) -->
         <div class="card" style="border: 1px dashed var(--accent);">
             <h2>Custos Ocultos da Operação <span class="cost-badge">Diluição Automática</span></h2>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
@@ -498,7 +492,7 @@
             <div class="grid-3" style="grid-template-columns: 1.5fr 0.6fr 0.9fr;">
                 <div class="form-group">
                     <label>Item / Descrição Material</label>
-                    <input type="text" id="mat_name" placeholder="Ex: Cabo Flexível 2.5mm">
+                    <input type="text" id="mat_nome" placeholder="Ex: Cabo Flexível 2.5mm">
                 </div>
                 <div class="form-group">
                     <label>Qtd / Un</label>
@@ -528,17 +522,38 @@
             </table>
         </div>
 
+        <!-- CARD TAXAS ATUALIZADO: Totalmente dinâmico com tabela e inserção própria -->
         <div class="card">
             <h2>Taxas Adicionais & Descontos</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                Adicione taxas extras visíveis ao cliente. Descontos e condições continuam fixos abaixo.
+            </p>
             <div class="grid-2">
                 <div class="form-group">
                     <label>Descrição da Taxa Adicional</label>
-                    <input type="text" id="outros_custos_desc" placeholder="Ex: Taxa de Deslocamento / Urgência" oninput="calculateTotals()">
+                    <input type="text" id="taxa_nome" placeholder="Ex: Taxa de Deslocamento, Urgência...">
                 </div>
                 <div class="form-group">
                     <label>Valor da Taxa (R$)</label>
-                    <input type="number" id="outros_custos" value="0" oninput="calculateTotals()">
+                    <input type="number" id="taxa_valor" placeholder="0.00" step="0.01">
                 </div>
+            </div>
+            <button type="button" class="btn-add" style="background:#eab308;" onclick="adicionarTaxaLista()">Adicionar Taxa</button>
+            
+            <table class="selected-items-table">
+                <thead>
+                    <tr>
+                        <th>Taxa Adicional</th>
+                        <th>Valor (R$)</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="taxas_selecionadas_corpo"></tbody>
+            </table>
+
+            <hr style="border: 0; border-top: 1px solid var(--border); margin: 15px 0;">
+
+            <div class="grid-2">
                 <div class="form-group">
                     <label>Desconto Especial (R$)</label>
                     <input type="number" id="desconto_total" value="0" oninput="calculateTotals()">
@@ -591,7 +606,6 @@
                 </div>
             </div>
 
-            <!-- BLOCO DE DECLARAÇÃO EXCLUSIVO DO RECIBO -->
             <div class="preview-section" id="p_bloco_declaracao" style="display: none; border: 1px solid #cbd5e1; padding: 15px; margin-bottom: 20px; background: #f8fafc; border-radius: 4px;">
                 <h3 style="background:none; border-left:none; padding:0; font-weight:bold; margin-bottom: 5px;">Declaração</h3>
                 <p style="font-size: 1rem; line-height: 1.5; color:#0f172a;">
@@ -634,10 +648,24 @@
                 </table>
             </div>
 
+            <!-- SEÇÃO DE TAXAS ADICIONAIS VISÍVEL NO PREVIEW -->
+            <div class="preview-section" id="preview_secao_taxas" style="display:none;">
+                <h3>Taxas Adicionais</h3>
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
+                            <th>Descrição da Taxa</th>
+                            <th style="text-align: right; width: 90px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preview_taxas_corpo"></tbody>
+                </table>
+            </div>
+
             <div class="preview-totals">
                 <div class="preview-total-row"><span>Mão de Obra:</span><strong id="p_subtotal_mo">R$ 0,00</strong></div>
                 <div class="preview-total-row"><span>Materiais Aplicados:</span><strong id="p_subtotal_mat">R$ 0,00</strong></div>
-                <div class="preview-total-row" id="p_row_outros"><span><span id="p_outros_label">Outros Custos</span>:</span><strong id="p_subtotal_outros">R$ 0,00</strong></div>
+                <div class="preview-total-row" id="p_row_outros" style="display:none;"><span>Taxas Adicionais:</span><strong id="p_subtotal_outros">R$ 0,00</strong></div>
                 <div class="preview-total-row" id="p_row_desconto" style="color: #10b981;"><span>Desconto:</span><strong id="p_subtotal_desconto">-R$ 0,00</strong></div>
                 <div class="preview-total-row grand-total"><span>VALOR TOTAL:</span><span id="p_valor_total">R$ 0,00</span></div>
             </div>
@@ -682,7 +710,8 @@
 
     let servicosSelecionados = [];
     let materiaisSelecionados = [];
-    let selectedCosts = []; // Array que guardará a lista dinâmica de custos ocultos
+    let selectedCosts = [];
+    let taxasSelecionadas = []; // Array global para as taxas adicionais visíveis
 
     document.getElementById('doc_data').valueAsDate = new Date();
 
@@ -770,7 +799,6 @@
         atualizarPainelBanco();
     }
 
-    // Funções para controle da tabela de Custos Ocultos
     function addCostToBudget() {
         const nameInput = document.getElementById('cost_name');
         const valueInput = document.getElementById('cost_value');
@@ -849,7 +877,7 @@
                 <td>${item.nome}</td>
                 <td><input type="number" value="${item.quantidade}" min="1" style="padding:2px;" oninput="alterarItem(${index}, 'quantidade', this.value)"></td>
                 <td><input type="text" value="${item.unidade}" style="padding:2px;" oninput="alterarItem(${index}, 'unidade', this.value)"></td>
-                <td>R$ ${item.precoUnitario}</td>
+                <td>R$ ${item.precoUnitario.toFixed(2)}</td>
                 <td><button class="btn-danger" onclick="servicosSelecionados.splice(${index}, 1); renderServicosTabela(); calculateTotals();">X</button></td>
             `;
             corpo.appendChild(tr);
@@ -898,64 +926,115 @@
         });
     }
 
-    function calculateTotals() {
-        // 1. Calcula a soma total dos Custos Ocultos inseridos na lista dinâmica
-        let totalCustosOcultos = selectedCosts.reduce((acc, curr) => acc + curr.price, 0);
+    // Funções para gerenciamento dinâmico de Taxas Adicionais
+    function adicionarTaxaLista() {
+        const nomeInput = document.getElementById('taxa_nome');
+        const valorInput = document.getElementById('taxa_valor');
+        const valor = parseFloat(valorInput.value);
 
-        // 2. Calcula o valor seco base da mão de obra
+        if (!nomeInput.value || isNaN(valor) || valor <= 0) {
+            alert("Insira uma descrição válida e um valor de taxa maior que R$ 0,00!");
+            return;
+        }
+
+        taxasSelecionadas.push({
+            nome: nomeInput.value.trim(),
+            valor: valor
+        });
+
+        nomeInput.value = "";
+        valorInput.value = "";
+
+        renderTaxasTabela();
+        calculateTotals();
+    }
+
+    function removerTaxaLista(index) {
+        taxasSelecionadas.splice(index, 1);
+        renderTaxasTabela();
+        calculateTotals();
+    }
+
+    function renderTaxasTabela() {
+        const corpo = document.getElementById('taxas_selecionadas_corpo');
+        corpo.innerHTML = '';
+        taxasSelecionadas.forEach((item, index) => {
+            corpo.innerHTML += `
+                <tr>
+                    <td>${item.nome}</td>
+                    <td>R$ ${item.valor.toFixed(2)}</td>
+                    <td><button class="btn-danger" onclick="removerTaxaLista(${index})">✕</button></td>
+                </tr>
+            `;
+        });
+    }
+
+    function calculateTotals() {
+        let totalCustosOcultos = selectedCosts.reduce((acc, curr) => acc + curr.price, 0);
         let subtotalMO_Seco = servicosSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         let subtotalMAT = materiaisSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         
-        // 3. Determina o fator de acréscimo proporcional para diluir os custos nos serviços
         let fatorAcrescimo = 0;
         if (subtotalMO_Seco > 0 && totalCustosOcultos > 0) {
             fatorAcrescimo = totalCustosOcultos / subtotalMO_Seco;
         }
 
-        // 4. Renderiza e calcula os serviços com o acréscimo embutido proporcionalmente
         const previewServicos = document.getElementById('preview_servicos_corpo');
         previewServicos.innerHTML = '';
         let subtotalMO_ComDilicao = 0;
 
         servicosSelecionados.forEach(item => {
-            // Aplica a diluição invisível diretamente no valor unitário exibido
             const precoUnitarioDiluido = item.precoUnitario + (item.precoUnitario * fatorAcrescimo);
             const totalItemDiluido = precoUnitarioDiluido * item.quantidade;
             subtotalMO_ComDilicao += totalItemDiluido;
 
+            // FIX 1: Corrigido para .toLocaleString() garantindo estritamente duas casas decimais após a vírgula
             previewServicos.innerHTML += `<tr>
-                <td style="padding: 4px 0;">${item.name || item.nome}</td>
+                <td style="padding: 4px 0;">${item.nome}</td>
                 <td style="text-align: center;">${item.quantidade}</td>
                 <td style="text-align: center;">${item.unidade}</td>
-                <td style="text-align: right;">R$ ${totalItemDiluido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                <td style="text-align: right;">R$ ${totalItemDiluido.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
             </tr>`;
         });
 
-        const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
-        const outrosCustosDesc = document.getElementById('outros_custos_desc').value || 'Taxas Adicionais';
+        // Sumariza dinamicamente as taxas adicionais inseridas na tabela
+        let totalTaxasAdicionais = taxasSelecionadas.reduce((acc, curr) => acc + curr.valor, 0);
         const descontoTotal = parseFloat(document.getElementById('desconto_total').value) || 0;
         
-        // O valor total geral considera a Mão de Obra já corrigida com os custos ocultos diluídos
-        const valorTotalGeral = (subtotalMO_ComDilicao + subtotalMAT + outrosCustos) - descontoTotal;
-        const valorFormatado = valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
+        const valorTotalGeral = (subtotalMO_ComDilicao + subtotalMAT + totalTaxasAdicionais) - descontoTotal;
+        const valorFormatado = valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO_ComDilicao.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-        document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO_ComDilicao.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
         
-        document.getElementById('p_outros_label').innerText = outrosCustosDesc;
-        document.getElementById('p_subtotal_outros').innerText = `R$ ${outrosCustos.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
-        document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_outros').innerText = `R$ ${totalTaxasAdicionais.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}`;
         document.getElementById('p_valor_total').innerText = `R$ ${valorFormatado}`;
         
         document.getElementById('p_declara_valor').innerText = `R$ ${valorFormatado}`;
 
-        if (outrosCustos === 0) document.getElementById('p_row_outros').style.display = 'none';
-        else document.getElementById('p_row_outros').style.display = 'flex';
+        // Controla exibição das taxas no painel de totais e na tabela dedicada do preview
+        const secaoTaxas = document.getElementById('preview_secao_taxas');
+        const corpoTaxasPreview = document.getElementById('preview_taxas_corpo');
+        corpoTaxasPreview.innerHTML = '';
+
+        if (totalTaxasAdicionais === 0) {
+            document.getElementById('p_row_outros').style.display = 'none';
+            secaoTaxas.style.display = 'none';
+        } else {
+            document.getElementById('p_row_outros').style.display = 'flex';
+            secaoTaxas.style.display = 'block';
+            taxasSelecionadas.forEach(taxa => {
+                corpoTaxasPreview.innerHTML += `<tr>
+                    <td style="padding: 4px 0;">${taxa.nome}</td>
+                    <td style="text-align: right;">R$ ${taxa.valor.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
+                </tr>`;
+            });
+        }
 
         if (descontoTotal === 0) document.getElementById('p_row_desconto').style.display = 'none';
         else document.getElementById('p_row_desconto').style.display = 'flex';
 
-        // Preenche Materiais no Preview
         const previewMateriais = document.getElementById('preview_materiais_corpo');
         previewMateriais.innerHTML = '';
         if(materiaisSelecionados.length === 0) {
@@ -967,7 +1046,7 @@
                     <td style="padding: 4px 0;">${item.nome}</td>
                     <td style="text-align: center;">${item.quantidade}</td>
                     <td style="text-align: center;">${item.unidade}</td>
-                    <td style="text-align: right;">R$ ${(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    <td style="text-align: right;">R$ ${(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2})}</td>
                 </tr>`;
             });
         }
@@ -1018,4 +1097,4 @@
     calculateTotals();
 </script>
 </body>
-</html>
+</html>a
