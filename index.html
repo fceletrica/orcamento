@@ -209,6 +209,15 @@
             margin-top: 5px;
         }
 
+        .cost-badge {
+            font-size: 0.75rem;
+            background: #f1f5f9;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: var(--text-muted);
+            font-weight: normal;
+        }
+
         /* Estilos do Bloco de Visualização (Preview) */
         .preview-doc {
             background: white;
@@ -433,6 +442,36 @@
             </div>
         </div>
 
+        <!-- NOVO CARD: Custos Ocultos de Operação (Inserido Cirurgicamente) -->
+        <div class="card" style="border: 1px dashed var(--accent);">
+            <h2>Custos Ocultos da Operação <span class="cost-badge">Diluição Automática</span></h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 12px;">
+                Insira aqui os valores de ajudantes, alimentação, gasolina, etc. Eles serão distribuídos e somados de forma <strong>proporcional e invisível</strong> no preço dos serviços exibidos para o cliente.
+            </p>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label>Descrição do Custo</label>
+                    <input type="text" id="cost_name" placeholder="Ex: Diária de Ajudante, Gasolina, Almoço...">
+                </div>
+                <div class="form-group">
+                    <label>Valor do Custo (R$)</label>
+                    <input type="number" id="cost_value" placeholder="0.00" step="0.01">
+                </div>
+            </div>
+            <button type="button" class="btn-add" onclick="addCostToBudget()">Inserir nos Custos Ocultos</button>
+
+            <table class="selected-items-table">
+                <thead>
+                    <tr>
+                        <th>Custo Oculto</th>
+                        <th>Valor Base</th>
+                        <th>Ação</th>
+                    </tr>
+                </thead>
+                <tbody id="selected_costs_table_body"></tbody>
+            </table>
+        </div>
+
         <div class="card">
             <h2>Mão de Obra e Serviços</h2>
             <div class="form-group autocomplete-container">
@@ -459,7 +498,7 @@
             <div class="grid-3" style="grid-template-columns: 1.5fr 0.6fr 0.9fr;">
                 <div class="form-group">
                     <label>Item / Descrição Material</label>
-                    <input type="text" id="mat_nome" placeholder="Ex: Cabo Flexível 2.5mm">
+                    <input type="text" id="mat_name" placeholder="Ex: Cabo Flexível 2.5mm">
                 </div>
                 <div class="form-group">
                     <label>Qtd / Un</label>
@@ -591,21 +630,6 @@
                             <th style="text-align: right; width: 90px;">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="preview_servicos_corpo"></tbody>
-                </table>
-            </div>
-
-            <div class="preview-section" id="preview_secao_materiais">
-                <h3>Detalhamento de Materiais</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="border-bottom: 2px solid #cbd5e1; text-align: left; font-weight: bold;">
-                            <th>Material</th>
-                            <th style="text-align: center; width: 50px;">Qtd</th>
-                            <th style="text-align: center; width: 50px;">Un</th>
-                            <th style="text-align: right; width: 90px;">Total</th>
-                        </tr>
-                    </thead>
                     <tbody id="preview_materiais_corpo"></tbody>
                 </table>
             </div>
@@ -658,6 +682,7 @@
 
     let servicosSelecionados = [];
     let materiaisSelecionados = [];
+    let selectedCosts = []; // Array que guardará a lista dinâmica de custos ocultos
 
     document.getElementById('doc_data').valueAsDate = new Date();
 
@@ -673,24 +698,20 @@
         const zonaObsInput = document.getElementById('zona_obs_input');
 
         if (type === 'Recibo') {
-            // Ajustes visuais nos inputs
             campoValidadeInputWrapper.style.display = 'none';
             campoPagamentoInputWrapper.style.display = 'none';
             blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr';
             zonaObsInput.style.display = 'none';
 
-            // Ajustes visuais no documento impresso/preview
             document.getElementById('p_bloco_declaracao').style.display = 'block';
             document.getElementById('p_zona_pagamento').style.display = 'none';
             document.getElementById('p_zona_obs').style.display = 'none';
             document.getElementById('p_zona_validade').style.display = 'none';
             
-            // Ajuste nas assinaturas (apenas prestador centralizado)
             document.getElementById('p_sig_cliente').style.display = 'none';
             document.getElementById('p_sig_prestador').className = "sig-line center-sig";
             document.getElementById('p_sig_prestador').innerText = "Assinatura do Emitente (FC Elétrica)";
         } else {
-            // Restaura os campos para Orçamento
             campoValidadeInputWrapper.style.display = 'block';
             campoPagamentoInputWrapper.style.display = 'block';
             blocoCamposPrazos.style.gridTemplateColumns = '1fr 1fr 1fr';
@@ -747,6 +768,49 @@
     function removerDoBanco(idx) {
         bancoServicos.splice(idx, 1);
         atualizarPainelBanco();
+    }
+
+    // Funções para controle da tabela de Custos Ocultos
+    function addCostToBudget() {
+        const nameInput = document.getElementById('cost_name');
+        const valueInput = document.getElementById('cost_value');
+        const value = parseFloat(valueInput.value);
+
+        if (!nameInput.value || isNaN(value) || value <= 0) {
+            alert("Insira uma descrição válida e um valor maior que R$ 0,00!");
+            return;
+        }
+
+        selectedCosts.push({
+            name: nameInput.value.trim(),
+            price: value
+        });
+
+        nameInput.value = "";
+        valueInput.value = "";
+
+        renderSelectedCosts();
+        calculateTotals();
+    }
+
+    function removeCostFromBudget(index) {
+        selectedCosts.splice(index, 1);
+        renderSelectedCosts();
+        calculateTotals();
+    }
+
+    function renderSelectedCosts() {
+        const tbody = document.getElementById('selected_costs_table_body');
+        tbody.innerHTML = "";
+        selectedCosts.forEach((item, index) => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>${item.name}</td>
+                    <td>R$ ${item.price.toFixed(2)}</td>
+                    <td><button class="btn-danger" onclick="removeCostFromBudget(${index})">✕</button></td>
+                </tr>
+            `;
+        });
     }
 
     const buscaInput = document.getElementById('busca_servico');
@@ -835,18 +899,47 @@
     }
 
     function calculateTotals() {
-        let subtotalMO = servicosSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
+        // 1. Calcula a soma total dos Custos Ocultos inseridos na lista dinâmica
+        let totalCustosOcultos = selectedCosts.reduce((acc, curr) => acc + curr.price, 0);
+
+        // 2. Calcula o valor seco base da mão de obra
+        let subtotalMO_Seco = servicosSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         let subtotalMAT = materiaisSelecionados.reduce((acc, curr) => acc + (curr.precoUnitario * curr.quantidade), 0);
         
+        // 3. Determina o fator de acréscimo proporcional para diluir os custos nos serviços
+        let fatorAcrescimo = 0;
+        if (subtotalMO_Seco > 0 && totalCustosOcultos > 0) {
+            fatorAcrescimo = totalCustosOcultos / subtotalMO_Seco;
+        }
+
+        // 4. Renderiza e calcula os serviços com o acréscimo embutido proporcionalmente
+        const previewServicos = document.getElementById('preview_servicos_corpo');
+        previewServicos.innerHTML = '';
+        let subtotalMO_ComDilicao = 0;
+
+        servicosSelecionados.forEach(item => {
+            // Aplica a diluição invisível diretamente no valor unitário exibido
+            const precoUnitarioDiluido = item.precoUnitario + (item.precoUnitario * fatorAcrescimo);
+            const totalItemDiluido = precoUnitarioDiluido * item.quantidade;
+            subtotalMO_ComDilicao += totalItemDiluido;
+
+            previewServicos.innerHTML += `<tr>
+                <td style="padding: 4px 0;">${item.name || item.nome}</td>
+                <td style="text-align: center;">${item.quantidade}</td>
+                <td style="text-align: center;">${item.unidade}</td>
+                <td style="text-align: right;">R$ ${totalItemDiluido.toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+            </tr>`;
+        });
+
         const outrosCustos = parseFloat(document.getElementById('outros_custos').value) || 0;
         const outrosCustosDesc = document.getElementById('outros_custos_desc').value || 'Taxas Adicionais';
         const descontoTotal = parseFloat(document.getElementById('desconto_total').value) || 0;
         
-        const valorTotalGeral = (subtotalMO + subtotalMAT + outrosCustos) - descontoTotal;
-
+        // O valor total geral considera a Mão de Obra já corrigida com os custos ocultos diluídos
+        const valorTotalGeral = (subtotalMO_ComDilicao + subtotalMAT + outrosCustos) - descontoTotal;
         const valorFormatado = valorTotalGeral.toLocaleString('pt-BR', {minimumFractionDigits:2});
 
-        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
+        document.getElementById('p_subtotal_mo').innerText = `R$ ${subtotalMO_ComDilicao.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_subtotal_mat').innerText = `R$ ${subtotalMAT.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         
         document.getElementById('p_outros_label').innerText = outrosCustosDesc;
@@ -854,7 +947,6 @@
         document.getElementById('p_subtotal_desconto').innerText = `-R$ ${descontoTotal.toLocaleString('pt-BR', {minimumFractionDigits:2})}`;
         document.getElementById('p_valor_total').innerText = `R$ ${valorFormatado}`;
         
-        // Atualiza a declaração do Recibo com o valor total calculado dinamicamente
         document.getElementById('p_declara_valor').innerText = `R$ ${valorFormatado}`;
 
         if (outrosCustos === 0) document.getElementById('p_row_outros').style.display = 'none';
@@ -862,18 +954,6 @@
 
         if (descontoTotal === 0) document.getElementById('p_row_desconto').style.display = 'none';
         else document.getElementById('p_row_desconto').style.display = 'flex';
-
-        // Preenche Serviços no Preview
-        const previewServicos = document.getElementById('preview_servicos_corpo');
-        previewServicos.innerHTML = '';
-        servicosSelecionados.forEach(item => {
-            previewServicos.innerHTML += `<tr>
-                <td style="padding: 4px 0;">${item.nome}</td>
-                <td style="text-align: center;">${item.quantidade}</td>
-                <td style="text-align: center;">${item.unidade}</td>
-                <td style="text-align: right;">R$ ${(item.precoUnitario * item.quantidade).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
-            </tr>`;
-        });
 
         // Preenche Materiais no Preview
         const previewMateriais = document.getElementById('preview_materiais_corpo');
